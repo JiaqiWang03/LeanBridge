@@ -198,13 +198,3 @@ theorem ramificationIdx_mul_inertiaDeg :
 end Extension
 
 end PadicField
-
-section Scratch
-variable (p : ℕ) [Fact p.Prime] (K : Type*) [Field K] [Algebra ℚ_[p] K]
-  [FiniteDimensional ℚ_[p] K]
-
-example : Valued ℚ_[p] (WithZero (Multiplicative ℤ)) := inferInstance
-example : Valuation.RankOne (Padic.mulValuation (p := p)) := inferInstance
-example : ValuationSubring ℚ_[p] := (Padic.mulValuation (p := p)).valuationSubring
-
-end Scratch
