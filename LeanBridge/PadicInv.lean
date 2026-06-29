@@ -57,4 +57,84 @@ instance instIsDiscreteValuationRing :
     IsDiscreteValuationRing (ringOfIntegers p K) := by
   sorry
 
+/-- The ramification index `e(K / ℚ_[p])` of a `p`-adic field over `ℚ_[p]`,
+i.e. the ramification index of the maximal ideal `(p)` of `ℤ_[p]` in `𝒪_K`.
+This is the absolute ramification index used in `def:base-absolute`. -/
+def ramificationIdxOverQp : ℕ :=
+  Ideal.ramificationIdx (R := ℤ_[p]) (S := ringOfIntegers p K)
+    (IsLocalRing.maximalIdeal ℤ_[p]) (IsLocalRing.maximalIdeal (ringOfIntegers p K))
+
+/-!
+## The ramification index of an extension `L / K` (blueprint §1.2, §1.3)
+-/
+
+namespace Extension
+
+variable (L : Type*) [Field L] [Algebra ℚ_[p] L] [PadicField p L]
+  [Algebra K L] [Module.Finite K L] [IsScalarTower ℚ_[p] K L]
+
+/-- `ℤ_[p]` acts on `L` through `K`, compatibly with its action through `ℚ_[p]`. -/
+instance instIsScalarTowerPadicInt : IsScalarTower ℤ_[p] K L :=
+  IsScalarTower.of_algebraMap_eq fun x => by
+    have hK : algebraMap ℤ_[p] K x = algebraMap ℚ_[p] K (algebraMap ℤ_[p] ℚ_[p] x) := rfl
+    have hL : algebraMap ℤ_[p] L x = algebraMap ℚ_[p] L (algebraMap ℤ_[p] ℚ_[p] x) := rfl
+    rw [hK, hL, IsScalarTower.algebraMap_apply ℚ_[p] K L]
+
+/-- The inclusion `𝒪_K → 𝒪_L` of rings of integers induced by `K → L`: an
+element integral over `ℤ_[p]` stays integral after embedding into `L`. -/
+def ringOfIntegersMap : ringOfIntegers p K →+* ringOfIntegers p L where
+  toFun x := ⟨algebraMap K L (x : K), by
+    have hx : IsIntegral ℤ_[p] (x : K) := x.2
+    have h2 := hx.map (IsScalarTower.toAlgHom ℤ_[p] K L)
+    rwa [IsScalarTower.toAlgHom_apply] at h2⟩
+  map_one' := Subtype.ext (by simp)
+  map_mul' a b := Subtype.ext (by simp)
+  map_zero' := Subtype.ext (by simp)
+  map_add' a b := Subtype.ext (by simp)
+
+/-- The `ℤ_[p]`-algebra structure on the pair `𝒪_K → 𝒪_L`, used to form the
+relative ramification index. -/
+instance instAlgebraRingOfIntegers : Algebra (ringOfIntegers p K) (ringOfIntegers p L) :=
+  (ringOfIntegersMap p K L).toAlgebra
+
+/-- The *ramification index* `e(L / K)` of an extension of `p`-adic fields
+(blueprint `def:ramification-index`): the ramification index of the maximal
+ideal `𝔪_K` of `𝒪_K` in `𝒪_L`. Equivalently `v_L(π_K) = e`, `𝔪_K 𝒪_L = 𝔪_L ^ e`. -/
+def ramificationIdx : ℕ :=
+  Ideal.ramificationIdx (R := ringOfIntegers p K) (S := ringOfIntegers p L)
+    (IsLocalRing.maximalIdeal (ringOfIntegers p K))
+    (IsLocalRing.maximalIdeal (ringOfIntegers p L))
+
+/-- The *wild ramification exponent* `w` of `L / K` (blueprint `def:tame-wild`):
+the exponent of `p` in `e`, so that `e = p ^ w * e_tame` with `p ∤ e_tame`. -/
+def wildRamificationExponent : ℕ := (ramificationIdx p K L).factorization p
+
+/-- The *tame ramification index* `e_tame` of `L / K` (blueprint `def:tame-wild`):
+the prime-to-`p` part of `e`. -/
+def tameRamificationIndex : ℕ :=
+  ramificationIdx p K L / p ^ wildRamificationExponent p K L
+
+/-- `L / K` is *unramified* when `e = 1` (blueprint `def:tame-wild`). -/
+def IsUnramified : Prop := ramificationIdx p K L = 1
+
+/-- `L / K` is *ramified* when `e > 1` (blueprint `def:tame-wild`). -/
+def IsRamified : Prop := 1 < ramificationIdx p K L
+
+/-- `L / K` is *tamely ramified* when `p ∤ e` (blueprint `def:tame-wild`). -/
+def IsTamelyRamified : Prop := ¬ (p : ℕ) ∣ ramificationIdx p K L
+
+/-- `L / K` is *wildly ramified* when `p ∣ e` (blueprint `def:tame-wild`). -/
+def IsWildlyRamified : Prop := (p : ℕ) ∣ ramificationIdx p K L
+
+/-- The *base ramification index* `e₀` of `L / K` (blueprint `def:base-absolute`):
+the ramification index of `K / ℚ_[p]`. -/
+def baseRamificationIdx : ℕ := ramificationIdxOverQp p K
+
+/-- The *absolute ramification index* `e_abs` of `L / K`
+(blueprint `def:base-absolute`): the ramification index of `L / ℚ_[p]`. By
+transitivity `e_abs = e * e₀`. -/
+def absoluteRamificationIdx : ℕ := ramificationIdxOverQp p L
+
+end Extension
+
 end PadicField
