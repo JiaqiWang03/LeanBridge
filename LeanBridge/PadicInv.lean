@@ -1,29 +1,26 @@
 import Mathlib
 
 /-!
-# Invariants of `p`-adic fields: the field and its normalized valuation
+# Invariants of `p`-adic fields: the field and its ring of integers
 
 This file begins the formalization of the blueprint
 `numina/blueprints/padicinv/padicinv.tex` (Invariants of a finite extension of
-`p`-adic fields). It covers the first two items:
+`p`-adic fields):
 
 * `PadicField` (blueprint `def:padic-field`): a `p`-adic field is a finite
   extension `K / ℚ_[p]`.
-* `PadicField.normalizedValuation` (the `v_K` of `def:padic-field`): the
-  normalized valuation `K → ℤᵐ⁰` attached to the unique maximal ideal of the
-  ring of integers `𝒪_K`.
+* `PadicField.ringOfIntegers` (`𝒪_K`): the integral closure of `ℤ_[p]` in `K`,
+  together with `IsFractionRing 𝒪_K K`.
+* `PadicField.instIsDiscreteValuationRing` (blueprint `prop:padic-is-dvf`):
+  `𝒪_K` is a discrete valuation ring. This is the only fact left as `sorry`.
 
-The ring of integers `𝒪_K` is the integral closure of `ℤ_[p]` in `K`. That it is
-a (complete) discrete valuation ring is blueprint `prop:padic-is-dvf`; it is the
-only fact still left as `sorry` here, and it is exactly what licenses the
-construction of the normalized valuation. Everything else is supplied by the
-char-`0` separability of `K / ℚ_[p]` and the Dedekind / fraction-ring API for
-integral closures in finite extensions.
+Once `𝒪_K` is a DVR it is in particular a local Dedekind domain with fraction
+field `K`, so the normalized valuation `v_K : K → ℤᵐ⁰` of `def:padic-field` is
+just Mathlib's `IsDedekindDomain.HeightOneSpectrum.valuation` for the maximal
+ideal of `𝒪_K`; no dedicated wrapper is introduced here.
 -/
 
 noncomputable section
-
-open scoped Multiplicative
 
 /-- A *`p`-adic field* is a finite extension `K / ℚ_[p]`. -/
 class PadicField (p : ℕ) [Fact p.Prime] (K : Type*) [Field K] [Algebra ℚ_[p] K] : Prop
@@ -59,22 +56,5 @@ which the normalized valuation below rests. -/
 instance instIsDiscreteValuationRing :
     IsDiscreteValuationRing (ringOfIntegers p K) := by
   sorry
-
-/-- The unique maximal ideal `𝔪_K` of `𝒪_K`, packaged as the height-one prime of
-the Dedekind domain `𝒪_K` whose adic valuation is the normalized valuation. -/
-def maximalSpectrum : IsDedekindDomain.HeightOneSpectrum (ringOfIntegers p K) where
-  asIdeal := IsLocalRing.maximalIdeal (ringOfIntegers p K)
-  isPrime := (IsLocalRing.maximalIdeal.isMaximal (ringOfIntegers p K)).isPrime
-  ne_bot := by
-    intro h
-    exact IsDiscreteValuationRing.not_isField (ringOfIntegers p K)
-      ((IsLocalRing.isField_iff_maximalIdeal_eq).2 h)
-
-/-- The *normalized valuation* `v_K : K → ℤᵐ⁰` of a `p`-adic field `K`: the
-`𝔪_K`-adic valuation of the ring of integers, extended to `K = Frac 𝒪_K`. It is
-normalized so that a uniformizer has valuation the generator of `Multiplicative ℤ`
-(equivalently `v_K(K^×) = ℤ` additively). -/
-def normalizedValuation : Valuation K (WithZero (Multiplicative ℤ)) :=
-  (maximalSpectrum p K).valuation K
 
 end PadicField
