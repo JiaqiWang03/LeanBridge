@@ -57,15 +57,8 @@ instance instIsDiscreteValuationRing :
     IsDiscreteValuationRing (ringOfIntegers p K) := by
   sorry
 
-/-- The ramification index `e(K / ℚ_[p])` of a `p`-adic field over `ℚ_[p]`,
-i.e. the ramification index of the maximal ideal `(p)` of `ℤ_[p]` in `𝒪_K`.
-This is the absolute ramification index used in `def:base-absolute`. -/
-def ramificationIdxOverQp : ℕ :=
-  Ideal.ramificationIdx (R := ℤ_[p]) (S := ringOfIntegers p K)
-    (IsLocalRing.maximalIdeal ℤ_[p]) (IsLocalRing.maximalIdeal (ringOfIntegers p K))
-
 /-!
-## The ramification index of an extension `L / K` (blueprint §1.2, §1.3)
+## Invariants of an extension `L / K` (blueprint §1.2, §1.3, §1.4)
 -/
 
 namespace Extension
@@ -105,15 +98,6 @@ def ramificationIdx : ℕ :=
     (IsLocalRing.maximalIdeal (ringOfIntegers p K))
     (IsLocalRing.maximalIdeal (ringOfIntegers p L))
 
-/-- The *wild ramification exponent* `w` of `L / K` (blueprint `def:tame-wild`):
-the exponent of `p` in `e`, so that `e = p ^ w * e_tame` with `p ∤ e_tame`. -/
-def wildRamificationExponent : ℕ := (ramificationIdx p K L).factorization p
-
-/-- The *tame ramification index* `e_tame` of `L / K` (blueprint `def:tame-wild`):
-the prime-to-`p` part of `e`. -/
-def tameRamificationIndex : ℕ :=
-  ramificationIdx p K L / p ^ wildRamificationExponent p K L
-
 /-- `L / K` is *unramified* when `e = 1` (blueprint `def:tame-wild`). -/
 def IsUnramified : Prop := ramificationIdx p K L = 1
 
@@ -126,14 +110,30 @@ def IsTamelyRamified : Prop := ¬ (p : ℕ) ∣ ramificationIdx p K L
 /-- `L / K` is *wildly ramified* when `p ∣ e` (blueprint `def:tame-wild`). -/
 def IsWildlyRamified : Prop := (p : ℕ) ∣ ramificationIdx p K L
 
-/-- The *base ramification index* `e₀` of `L / K` (blueprint `def:base-absolute`):
-the ramification index of `K / ℚ_[p]`. -/
-def baseRamificationIdx : ℕ := ramificationIdxOverQp p K
+/-!
+### The residue degree and the identity `e * f = [L : K]` (blueprint §1.4)
+-/
 
-/-- The *absolute ramification index* `e_abs` of `L / K`
-(blueprint `def:base-absolute`): the ramification index of `L / ℚ_[p]`. By
-transitivity `e_abs = e * e₀`. -/
-def absoluteRamificationIdx : ℕ := ramificationIdxOverQp p L
+/-- `𝒪_L` is a finite free `𝒪_K`-module of rank `[L : K]`
+(blueprint `lem:OL-free`, Tian Lemma 9.1.1). Proof deferred. -/
+theorem free_finrank :
+    Module.Free (ringOfIntegers p K) (ringOfIntegers p L) ∧
+      Module.finrank (ringOfIntegers p K) (ringOfIntegers p L) = Module.finrank K L := by
+  sorry
+
+/-- The *residue degree* `f(L / K)` of an extension of `p`-adic fields
+(blueprint `def:residue-degree`): `f = [k_L : k_K]`, realised as the inertia
+degree of `𝔪_K` in `𝒪_L`. -/
+def inertiaDeg : ℕ :=
+  Ideal.inertiaDeg (R := ringOfIntegers p K) (S := ringOfIntegers p L)
+    (IsLocalRing.maximalIdeal (ringOfIntegers p K))
+    (IsLocalRing.maximalIdeal (ringOfIntegers p L))
+
+/-- The fundamental identity `e * f = [L : K]`
+(blueprint `prop:ef-eq-degree`, Tian Prop. 9.1.4). Proof deferred. -/
+theorem ramificationIdx_mul_inertiaDeg :
+    ramificationIdx p K L * inertiaDeg p K L = Module.finrank K L := by
+  sorry
 
 end Extension
 

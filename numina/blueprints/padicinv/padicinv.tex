@@ -209,9 +209,6 @@ $e_{\mathrm{tame}}$ is the
 
 \begin{definition}[Base and absolute ramification indices]
 \label{def:base-absolute}
-\lean{PadicField.Extension.absoluteRamificationIdx}
-\leanfile{LeanBridge/PadicInv.lean}
-\uses{def:ramification-index}
 \notready
 The \knowl{lf.base_ramification_index}{base ramification index} $e_0$ of $L/K$
 is the ramification index of $K/\Qp$, and the
@@ -227,6 +224,7 @@ $e_{\mathrm{abs}}=e\cdot e_0$.
 \begin{lemma}[$\OL$ is free over $\OK$; Tian, Lemma 9.1.1]
 \label{lem:OL-free}
 \lean{PadicField.Extension.free_finrank}
+\leanfile{LeanBridge/PadicInv.lean}
 \uses{prop:padic-is-dvf}
 \notready
 The ring $\OL$ is a finite free $\OK$-module of rank $n=[L:K]$.
@@ -264,7 +262,8 @@ reductions modulo $\pi_K\OL$ form a $k_K$-basis of $\OL/\pi_K\OL$.
 
 \begin{definition}[Residue degree; Tian, §9.1.3]
 \label{def:residue-degree}
-\lean{Ideal.inertiaDeg}
+\lean{PadicField.Extension.inertiaDeg}
+\leanfile{LeanBridge/PadicInv.lean}
 \uses{lem:OL-free}
 \mathlibok
 The residue field $k_L=\OL/\mfL$ is a finite extension of $k_K$: by
@@ -282,7 +281,8 @@ $L/K$ is \knowl{lf.totally_ramified}{totally ramified} (equivalently $e=n$).
 \begin{proposition}[Fundamental identity; Tian, Prop. 9.1.4]
 \label{prop:ef-eq-degree}
 \lean{PadicField.Extension.ramificationIdx_mul_inertiaDeg}
-\uses{def:ramification-index,def:residue-degree,lem:OL-free}
+\leanfile{LeanBridge/PadicInv.lean}
+\uses{def:ramification-index, def:residue-degree, lem:OL-free}
 \notready
 With $e=e(L/K)$ and $f=f(L/K)$,
 \[
