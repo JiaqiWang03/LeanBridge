@@ -203,16 +203,8 @@ section Scratch
 variable (p : ℕ) [Fact p.Prime] (K : Type*) [Field K] [Algebra ℚ_[p] K]
   [FiniteDimensional ℚ_[p] K]
 
-example : HenselianLocalRing ℤ_[p] := inferInstance
-example : ValuativeRel ℚ_[p] := inferInstance
-example : IsDedekindDomain ℤ_[p] := inferInstance
-example : Algebra.IsSeparable ℚ_[p] K := by
-  haveI : CharZero K := charZero_of_injective_algebraMap (algebraMap ℚ_[p] K).injective
-  exact Algebra.IsSeparable.of_integral ℚ_[p] K
-example : IsDedekindDomain (integralClosure ℤ_[p] K) := by
-  haveI : CharZero K := charZero_of_injective_algebraMap (algebraMap ℚ_[p] K).injective
-  haveI : Algebra.IsSeparable ℚ_[p] K := Algebra.IsSeparable.of_integral ℚ_[p] K
-  exact IsIntegralClosure.isDedekindDomain ℤ_[p] ℚ_[p] K (integralClosure ℤ_[p] K)
-example : ValuationRing (integralClosure ℤ_[p] K) := inferInstance
+example : Valued ℚ_[p] (WithZero (Multiplicative ℤ)) := inferInstance
+example : Valuation.RankOne (Padic.mulValuation (p := p)) := inferInstance
+example : ValuationSubring ℚ_[p] := (Padic.mulValuation (p := p)).valuationSubring
 
 end Scratch
