@@ -452,3 +452,456 @@ Theorem~\ref{thm:dedekind-different}.
 \end{example}
 
 \end{document}
+============================================================================
+%  Blueprint chapter: invariants of a finite extension L/K of p-adic fields
+%
+%  Section order (as requested):
+%    1. p-adic fields = finite extensions of Q_p; prop: they are DVFs.
+%    2. Ramification index e, defined via the valuation v_L = (1/n) v_K o N.
+%    3. Ramified / unramified / tame / wild terminology.
+%    4. Residue degree f (Lemma 9.1.1), totally ramified, and ef = [L:K].
+%    5.-8. Residue field invariant, discriminant exponent, characterisations,
+%          test cases, and the packaged invariant.
+%
+%  HOW TO USE
+%  ----------
+%  * Standalone: compiles with pdflatex. The blueprint annotation macros
+%    (\lean, \leanok, \uses, \notready, \mathlibok) render as small visible
+%    tags so the formalisation plan is reviewable.
+%  * In a leanblueprint / Verso project: delete everything from \documentclass
+%    down to \begin{document}, then \input the body. The \providecommand
+%    fallbacks are overridden by the real blueprint macros, so the literal
+%    Lean names (with underscores) are passed through unchanged.
+%
+%  Math sources:
+%    - ef = [L:K], Lemma 9.1.1, Prop. 9.1.4: Y. Tian, "Lectures on Algebraic
+%      Number Theory", Chapter 9 (Finite Extensions of Complete DVFs).
+%    - the other definitions: the LMFDB local-field knowls (links inline).
+% ============================================================================
+
+% ====================== PREAMBLE (drop when integrating) ====================
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{xcolor}
+\usepackage[margin=1in]{geometry}
+\usepackage{seqsplit}
+\usepackage[hidelinks]{hyperref}
+\sloppy
+\emergencystretch=3em
+
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+\newtheorem{example}[definition]{Example}
+\theoremstyle{plain}
+\newtheorem{lemma}[definition]{Lemma}
+\newtheorem{proposition}[definition]{Proposition}
+\newtheorem{theorem}[definition]{Theorem}
+\newtheorem{corollary}[definition]{Corollary}
+\theoremstyle{remark}
+\newtheorem{remark}[definition]{Remark}
+
+% blueprint annotation macros: visible fallbacks, overridden by blueprint.sty.
+% \bpsplit detokenizes a Lean name / label and lets it break anywhere, so long
+% identifiers wrap inside the text column instead of overrunning the margin.
+\newcommand{\bpsplit}[1]{\begingroup\edef\bptmp{\detokenize{#1}}%
+  \expandafter\seqsplit\expandafter{\bptmp}\endgroup}
+\providecommand{\lean}[1]{%
+  \par\nopagebreak\noindent
+  {\footnotesize\color{teal}\ttfamily lean:~\bpsplit{#1}}\par}
+\providecommand{\uses}[1]{%
+  \par\nopagebreak\noindent
+  {\footnotesize\color{gray}\ttfamily uses:~\bpsplit{#1}}\par}
+\providecommand{\leanok}{{\footnotesize\color{teal}\ [formalised]}}
+\providecommand{\mathlibok}{{\footnotesize\color{teal}\ [in mathlib]}}
+\providecommand{\notready}{{\footnotesize\color{orange}\ [TODO: not yet formalised]}}
+\providecommand{\discussion}[1]{}
+
+\newcommand{\knowl}[2]{\href{https://www.lmfdb.org/knowledge/show/#1}{#2}}
+
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\Qp}{\mathbb{Q}_p}
+\newcommand{\OK}{\mathcal{O}_K}
+\newcommand{\OL}{\mathcal{O}_L}
+\newcommand{\mfK}{\mathfrak{m}_K}
+\newcommand{\mfL}{\mathfrak{m}_L}
+\newcommand{\disc}{\operatorname{disc}}
+\newcommand{\Tr}{\operatorname{Tr}}
+\newcommand{\Nm}{\operatorname{N}}
+\newcommand{\different}{\mathfrak{d}}
+\DeclareMathOperator{\dimk}{dim}
+
+\begin{document}
+% ==================== END PREAMBLE (drop when integrating) ==================
+
+\section{Invariants of a finite extension of \texorpdfstring{$p$}{p}-adic fields}
+\label{sec:local-field-invariants}
+
+\emph{Goal.}\ For a finite extension $L/K$ of $p$-adic fields we package the
+\knowl{lf.ramification_index}{ramification index} $e$, the residue degree
+($=$ \knowl{lf.unramified_degree}{unramified degree}) $f$ with the fundamental
+identity $ef=[L:K]$, the \knowl{lf.residue_field}{residue field}, and the
+\knowl{lf.discriminant_exponent}{discriminant exponent}
+$d=v_K(\disc(L/K))$. The proof of $ef=[L:K]$ follows Tian, Chapter~9 (finite
+extensions of complete discrete valuation fields); the remaining definitions
+follow the LMFDB knowls (linked inline). In \texttt{mathlib} we already have
+\texttt{Padic}/\texttt{PadicInt}, the
+\texttt{IsLocalRing}/\texttt{IsDiscreteValuationRing} (DVR) API,
+\texttt{Ideal.ramificationIdx}, \texttt{Ideal.inertiaDeg} and
+\texttt{Ideal.sum\_ramification\_inertia}, and the \texttt{differentIdeal} /
+discriminant machinery; the \notready{} items below are the new
+$p$-adic-field-facing packaging. (Lean names on new declarations are
+placeholders.)
+
+% ===========================================================================
+\subsection{\texorpdfstring{$p$}{p}-adic fields are discrete valuation fields}
+\label{subsec:padic-dvf}
+
+\begin{definition}[$p$-adic field]
+\label{def:padic-field}
+\lean{PadicField}
+\leanfile{LeanBridge/PadicInv.lean}
+\notready
+A \emph{$p$-adic field} is a finite extension $K/\Qp$. We write $\OK$ for its
+ring of integers (the integral closure of $\Z_p$ in $K$), $\mfK \subset \OK$ for
+the maximal ideal, $k_K = \OK/\mfK$ for the residue field, and
+$v_K\colon K^\times \twoheadrightarrow \Z$ for the normalized valuation; a
+generator $\pi_K$ of $\mfK$ is a \emph{uniformizer}.
+\end{definition}
+
+\begin{proposition}[A $p$-adic field is a complete DVF with finite residue field]
+\label{prop:padic-is-dvf}
+\lean{PadicField.instIsDiscreteValuationRing}
+\leanfile{LeanBridge/PadicInv.lean}
+\uses{def:padic-field}
+\notready
+Let $K$ be a $p$-adic field. Then $K$ is complete for the $p$-adic absolute
+value, its ring of integers $\OK$ is a complete discrete valuation ring
+(equivalently a complete local principal ideal domain), and the residue field
+$k_K$ is a finite field of characteristic $p$. In particular $\mfK=(\pi_K)$ is
+principal and $\bigcap_{m\ge 0}\mfK^{\,m}=0$.
+\end{proposition}
+
+\begin{remark}[Why this proposition matters]
+\label{rem:dvf-license}
+\uses{prop:padic-is-dvf}
+Proposition~\ref{prop:padic-is-dvf} is what licenses Tian's Chapter~9 for
+$p$-adic fields: every result below is stated there for a \emph{complete
+discrete} valuation field, and the proofs use both completeness (the
+$\pi_K$-adic limit in Lemma~\ref{lem:OL-free}) and discreteness (the finite
+filtration in Proposition~\ref{prop:ef-eq-degree}). They do \emph{not} hold for
+non-discrete valuations. Equal-characteristic local fields such as
+$\mathbb{F}_q((t))$ are also complete DVFs and share the $ef=[L:K]$ theory, but
+they are not $p$-adic fields and are outside the scope of \texttt{lf.*}.
+\end{remark}
+
+\medskip
+For the rest of the chapter, fix a finite extension $L/K$ of $p$-adic fields of
+degree $n=[L:K]$, with the analogous data $\OL,\mfL=(\pi_L),k_L,v_L$. By
+Proposition~\ref{prop:padic-is-dvf} applied to $L$, all of these exist, and
+$\OL$ is the integral closure of $\OK$ in $L$.
+
+% ===========================================================================
+\subsection{The ramification index}
+\label{subsec:ram-index}
+
+\begin{definition}[Ramification index; Tian, §9.1.3]
+\label{def:ramification-index}
+\lean{PadicField.Extension.ramificationIdx}
+\leanfile{LeanBridge/PadicInv.lean}
+\uses{prop:padic-is-dvf}
+\mathlibok
+The valuation $v_K$ extends uniquely to $L$ (indeed to a fixed algebraic
+closure $\overline K$) by
+\[
+  w(x) \;:=\; \frac{1}{n}\,v_K\!\bigl(\Nm_{L/K}(x)\bigr),
+  \qquad x\in L^\times .
+\]
+Its value group satisfies $\Z = v_K(K^\times)\subseteq w(L^\times)\subseteq
+\tfrac1n\Z$, so there is a unique integer $e=e(L/K)\ge 1$ dividing $n$ with
+\[
+  w(L^\times) \;=\; \frac1e\,\Z .
+\]
+This $e$ is the \knowl{lf.ramification_index}{ramification index} of $L/K$.
+Equivalently, $e$ is determined by
+\[
+  \pi_K \;=\; u\,\pi_L^{\,e}\qquad(u\in\OL^\times),
+  \qquad\text{i.e.}\qquad
+  v_L(\pi_K)=e,\qquad \pi_K\OL=\mfL^{\,e}.
+\]
+If $e=1$ we say $L/K$ is \knowl{lf.unramified}{unramified}.
+\end{definition}
+
+% ===========================================================================
+\subsection{Ramified, unramified, tame and wild}
+\label{subsec:tame-wild}
+
+\begin{definition}[Tame and wild ramification]
+\label{def:tame-wild}
+\lean{PadicField.Extension.wildRamificationExponent}
+\leanfile{LeanBridge/PadicInv.lean}
+\uses{def:ramification-index}
+\notready
+Factor the ramification index as
+\[
+  e \;=\; p^{\,w}\,e_{\mathrm{tame}}, \qquad p\nmid e_{\mathrm{tame}} .
+\]
+The exponent $w$ is the
+\knowl{lf.wild_ramification_exponent}{wild ramification exponent} and
+$e_{\mathrm{tame}}$ is the
+\knowl{lf.tame_ramification_index}{tame ramification index}. We say $L/K$ is:
+\begin{itemize}
+  \item \knowl{lf.unramified}{unramified} if $e=1$;
+  \item \emph{ramified} if $e>1$;
+  \item \knowl{lf.tamely_ramified}{tamely ramified} if $p\nmid e$
+        (equivalently $w=0$);
+  \item \emph{wildly ramified} if $p\mid e$ (equivalently $w\ge 1$).
+\end{itemize}
+\end{definition}
+
+\begin{definition}[Base and absolute ramification indices]
+\label{def:base-absolute}
+\notready
+The \knowl{lf.base_ramification_index}{base ramification index} $e_0$ of $L/K$
+is the ramification index of $K/\Qp$, and the
+\knowl{lf.absolute_ramification_index}{absolute ramification index}
+$e_{\mathrm{abs}}$ is the ramification index of $L/\Qp$. By transitivity
+$e_{\mathrm{abs}}=e\cdot e_0$.
+\end{definition}
+
+% ===========================================================================
+\subsection{The residue degree and the identity \texorpdfstring{$ef=[L:K]$}{ef=[L:K]}}
+\label{subsec:ef}
+
+\begin{lemma}[$\OL$ is free over $\OK$; Tian, Lemma 9.1.1]
+\label{lem:OL-free}
+\lean{PadicField.Extension.free_finrank}
+\leanfile{LeanBridge/PadicInv.lean}
+\uses{prop:padic-is-dvf}
+\notready
+The ring $\OL$ is a finite free $\OK$-module of rank $n=[L:K]$.
+\end{lemma}
+
+\begin{proof}
+\uses{prop:padic-is-dvf}
+For $x\in\OL$ write $\bar x$ for its image in $\OL/\pi_K\OL$. Choose
+$\{b_i:i\in I\}\subseteq\OL$ whose reductions $(\bar b_i)_{i\in I}$ form a
+$k_K$-basis of $\OL/\pi_K\OL$.
+
+\emph{Independence over $K$.}\ If $\sum_i a_ib_i=0$ is a nontrivial relation with
+$a_i\in K$, multiply by a power of $\pi_K$ so that all $a_i\in\OK$ with not all
+reductions $\bar a_i\in k_K$ zero; then $\sum_i\bar a_i\bar b_i=0$ contradicts
+the choice of the $b_i$. Hence the $b_i$ are $K$-independent and $|I|\le n$.
+
+\emph{Generation.}\ Since $(\bar b_i)$ is a $k_K$-basis, every $x\in\OL$ is
+$x=\sum_i a_i^{(0)}b_i+\pi_Kx_1$ with $a_i^{(0)}\in\OK$, $x_1\in\OL$. Iterating,
+\[
+  x=\sum_{i\in I}\Bigl(a_i^{(0)}+\pi_Ka_i^{(1)}+\cdots+\pi_K^{\,m-1}a_i^{(m-1)}\Bigr)b_i
+    +\pi_K^{\,m}x_m .
+\]
+As $\OL$ is $\pi_K$-adically complete (Prop.~\ref{prop:padic-is-dvf}), letting
+$m\to\infty$ gives $x\in\sum_i\OK b_i$. Every $y\in L$ has $\pi_K^{\,m}y\in\OL$
+for some $m$, so $(b_i)$ is a $K$-basis of $L$; hence $|I|=n$ and $(b_i)$ is an
+$\OK$-basis of $\OL$.
+\end{proof}
+
+\begin{remark}[Basis criterion; Tian, Remark 9.1.2]
+\label{rem:basis-criterion}
+\uses{lem:OL-free}
+Elements $b_1,\dots,b_n\in\OL$ form an $\OK$-basis of $\OL$ if and only if their
+reductions modulo $\pi_K\OL$ form a $k_K$-basis of $\OL/\pi_K\OL$.
+\end{remark}
+
+\begin{definition}[Residue degree; Tian, §9.1.3]
+\label{def:residue-degree}
+\lean{PadicField.Extension.inertiaDeg}
+\leanfile{LeanBridge/PadicInv.lean}
+\uses{lem:OL-free}
+\mathlibok
+The residue field $k_L=\OL/\mfL$ is a finite extension of $k_K$: by
+Lemma~\ref{lem:OL-free} the quotient $\OL/\pi_K\OL$ has dimension $n$ over
+$k_K$, so $k_L/k_K$ is finite. The integer
+\[
+  f(L/K) \;:=\; [k_L:k_K]
+\]
+is the \emph{residue degree} of $L/K$; it coincides with the
+\knowl{lf.unramified_degree}{unramified degree} $[L^{\mathrm{un}}:K]$, where
+$L^{\mathrm{un}}/K$ is the maximal unramified subextension. If $f(L/K)=1$ we say
+$L/K$ is \knowl{lf.totally_ramified}{totally ramified} (equivalently $e=n$).
+\end{definition}
+
+\begin{proposition}[Fundamental identity; Tian, Prop. 9.1.4]
+\label{prop:ef-eq-degree}
+\lean{PadicField.Extension.ramificationIdx_mul_inertiaDeg}
+\leanfile{LeanBridge/PadicInv.lean}
+\uses{def:ramification-index, def:residue-degree, lem:OL-free}
+\notready
+With $e=e(L/K)$ and $f=f(L/K)$,
+\[
+  e\,f \;=\; [L:K].
+\]
+Moreover, if $\alpha_1,\dots,\alpha_f\in\OL$ reduce to a $k_K$-basis of $k_L$,
+then $\{\alpha_i\,\pi_L^{\,j-1}:1\le i\le f,\ 1\le j\le e\}$ is an $\OK$-basis of
+$\OL$.
+\end{proposition}
+
+\begin{proof}
+\uses{lem:OL-free,rem:basis-criterion,def:ramification-index}
+By Lemma~\ref{lem:OL-free}, $\dimk_{k_K}(\OL/\pi_K\OL)=n$. Since
+$\pi_K\OL=\mfL^{\,e}$ (Def.~\ref{def:ramification-index}), there is a filtration
+by $\OL$-submodules
+\[
+  \OL/\mfL^{\,e}\;\supsetneq\;\mfL/\mfL^{\,e}\;\supsetneq\;\cdots
+  \;\supsetneq\;\mfL^{\,e-1}/\mfL^{\,e}\;\supsetneq\;(0),
+\]
+whose $e$ successive quotients $\mfL^{\,t}/\mfL^{\,t+1}$ are each $1$-dimensional
+over $k_L$ (multiplication by $\pi_L^{\,t}$ gives $k_L\xrightarrow{\sim}
+\mfL^{\,t}/\mfL^{\,t+1}$). Counting $k_K$-dimensions,
+\[
+  n=\dimk_{k_K}(\OL/\pi_K\OL)=e\cdot\dimk_{k_K}k_L=e\,f .
+\]
+For the basis statement, fix representatives $\{\gamma_i\}\subseteq\OK$ of
+$k_K$; then $\{\gamma_i\alpha_j\}$ represents $k_L$, and by the structure of a
+complete DVR every element of $\OL$ has a unique expansion
+$\sum_{m\ge 0}c_m\pi_L^{\,m}$ with $c_m$ in this set. Reducing modulo
+$\pi_K\OL=\mfL^{\,e}$ shows $\{\alpha_i\pi_L^{\,j-1}\}$ generates $\OL/\pi_K\OL$
+over $k_K$; as there are $ef=n$ of them they form a $k_K$-basis, and
+Remark~\ref{rem:basis-criterion} lifts this to an $\OK$-basis of $\OL$.
+\end{proof}
+
+\begin{remark}[Relation to existing \texttt{mathlib}]
+\mathlibok
+For the unique nonzero prime of $\OL$ above the unique nonzero prime of $\OK$,
+the abstract \texttt{Ideal.ramificationIdx} and \texttt{Ideal.inertiaDeg}
+specialise to $e$ and $f$, and \texttt{Ideal.sum\_ramification\_inertia} (a sum
+over primes above $\mfK$, here a single term) specialises to
+Proposition~\ref{prop:ef-eq-degree}. The new work is identifying these abstract
+numbers with the $p$-adic-field-level $e,f$ and exposing the identity as
+$ef=\operatorname{finrank}_K L$.
+\end{remark}
+
+% ===========================================================================
+\subsection{The discriminant exponent}
+\label{subsec:disc}
+
+\begin{definition}[Discriminant of $L/K$]
+\label{def:discriminant}
+\lean{Algebra.discr}
+\uses{lem:OL-free}
+\mathlibok
+For an $\OK$-basis $\{\beta_1,\dots,\beta_n\}$ of $\OL$
+(Lemma~\ref{lem:OL-free}) and the embeddings $\sigma_1,\dots,\sigma_n$ of $L$
+into $\overline K$, the \emph{discriminant} of $L/K$ is the square of
+$\det(\sigma_i(\beta_j))_{i,j}$, equivalently
+\[
+  \disc(L/K)=\det\!\bigl(\Tr_{L/K}(\beta_i\beta_j)\bigr)_{i,j}\in K^\times ,
+\]
+well-defined up to the square of a unit of $\OK^\times$.
+\end{definition}
+
+\begin{definition}[Discriminant exponent]
+\label{def:disc-exponent}
+\lean{PadicField.Extension.discriminantExponent}
+\uses{def:discriminant,def:ramification-index}
+\notready
+Writing $\disc(L/K)=\pi_K^{\,d}u$ with $u\in\OK^\times$, the
+\knowl{lf.discriminant_exponent}{discriminant exponent} of $L/K$ is
+\[
+  d=d(L/K)=v_K\!\bigl(\disc(L/K)\bigr)\in\Z_{\ge 0}
+\]
+(LMFDB writes it $c$). Together with the
+\knowl{lf.discriminant_root_field}{discriminant root field} it determines the
+discriminant up to a unit square. The
+\knowl{lf.base_discriminant_exponent}{base} $c_0$ and
+\knowl{lf.absolute_discriminant_exponent}{absolute} $c_{\mathrm{abs}}$
+discriminant exponents are those of $K/\Qp$ and $L/\Qp$.
+\end{definition}
+
+\begin{definition}[Different exponent]
+\label{def:different-exponent}
+\lean{differentIdeal}
+\uses{def:ramification-index}
+\mathlibok
+The different $\different_{L/K}\subseteq\OL$ is an ideal; write
+$\different_{L/K}=\mfL^{\,\delta}$ for its \emph{different exponent}
+$\delta=\delta(L/K)\ge 0$. The discriminant is its norm:
+$\disc(L/K)=\Nm_{L/K}(\different_{L/K})$.
+\end{definition}
+
+\begin{proposition}[Discriminant exponent via the different]
+\label{prop:disc-eq-f-delta}
+\lean{PadicField.Extension.discExponent_eq_inertiaDeg_mul_differentExponent}
+\uses{def:disc-exponent,def:different-exponent,def:residue-degree}
+\notready
+$d(L/K)=f(L/K)\cdot\delta(L/K)$, since $\Nm_{L/K}(\mfL)=\mfK^{\,f}$ and the
+discriminant is the norm of the different.
+\end{proposition}
+
+% ===========================================================================
+\subsection{Characterisations of the discriminant exponent}
+\label{subsec:disc-facts}
+
+\begin{theorem}[Dedekind's different theorem]
+\label{thm:dedekind-different}
+\lean{PadicField.Extension.differentExponent_tame}
+\uses{def:different-exponent,def:tame-wild}
+\notready
+The different exponent satisfies $\delta\ge e-1$, with
+\[
+  \delta=e-1\ \Longleftrightarrow\ L/K\text{ is tamely ramified}\quad(p\nmid e),
+\]
+and $\delta\ge e$ when $p\mid e$ (wild). In particular $\delta=0\iff e=1$.
+\end{theorem}
+
+\begin{theorem}[$d=0\iff$ unramified]
+\label{thm:disc-zero-iff-unramified}
+\lean{PadicField.Extension.discExponent_eq_zero_iff_unramified}
+\uses{thm:dedekind-different,prop:disc-eq-f-delta,def:tame-wild}
+\notready
+$d(L/K)=0$ if and only if $L/K$ is unramified ($e=1$).
+\end{theorem}
+
+\begin{corollary}[Tame discriminant exponent]
+\label{cor:tame-disc}
+\uses{thm:dedekind-different,prop:disc-eq-f-delta}
+\notready
+If $L/K$ is tamely ramified then $d(L/K)=f(e-1)$; for a totally tamely ramified
+extension ($f=1$) this gives $d=e-1$.
+\end{corollary}
+
+% ===========================================================================
+\subsection{Test cases}
+\label{subsec:tests}
+
+\begin{example}[Unramified extension of $\Qp$]
+\label{ex:unramified}
+\uses{prop:ef-eq-degree,thm:disc-zero-iff-unramified}
+\notready
+The degree-$n$ unramified extension of $\Qp$ (adjoin a root of unity of order
+$p^n-1$) has $f=n$, $e=1$, $d=0$, residue field $\mathbb{F}_{p^n}$. Sharp case of
+Theorem~\ref{thm:disc-zero-iff-unramified}.
+\end{example}
+
+\begin{example}[Totally tamely ramified $\Qp(p^{1/e})$]
+\label{ex:tame}
+\uses{cor:tame-disc,def:tame-wild}
+\notready
+For $p\nmid e$, $K=\Qp(p^{1/e})$ (root of the Eisenstein polynomial $X^e-p$) is
+totally tamely ramified: $e(K/\Qp)=e$, $f=1$, $d=e-1$ by
+Corollary~\ref{cor:tame-disc}, with integral basis
+$\{1,p^{1/e},\dots,p^{(e-1)/e}\}$ (Prop.~\ref{prop:ef-eq-degree}(2)).
+\end{example}
+
+\begin{example}[A wildly ramified extension of $\Q_2$]
+\label{ex:wild}
+\uses{def:tame-wild,prop:disc-eq-f-delta}
+\notready
+$\Q_2(\sqrt2)/\Q_2$ is totally ramified of degree $e=2$ with $p=2\mid e$, hence
+wildly ramified ($w=1$, $e_{\mathrm{tame}}=1$). Here $f=1$ and $\delta=2>e-1$, so
+$d=f\delta=2$, stressing the $\delta\ge e$ bound of
+Theorem~\ref{thm:dedekind-different}.
+\end{example}
+
+\end{document}
