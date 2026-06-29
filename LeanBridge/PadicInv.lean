@@ -57,6 +57,13 @@ instance instIsDiscreteValuationRing :
     IsDiscreteValuationRing (ringOfIntegers p K) := by
   sorry
 
+/-- `𝒪_K` is `𝔪_K`-adically complete (the completeness half of
+`prop:padic-is-dvf`): the integral closure of the complete DVR `ℤ_[p]` in a
+finite extension is again complete. -/
+instance instIsAdicComplete :
+    IsAdicComplete (IsLocalRing.maximalIdeal (ringOfIntegers p K)) (ringOfIntegers p K) := by
+  sorry
+
 /-!
 ## Invariants of an extension `L / K` (blueprint §1.2, §1.3, §1.4)
 -/
