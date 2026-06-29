@@ -114,12 +114,46 @@ def IsWildlyRamified : Prop := (p : ℕ) ∣ ramificationIdx p K L
 ### The residue degree and the identity `e * f = [L : K]` (blueprint §1.4)
 -/
 
+omit [PadicField p L] in
 /-- `𝒪_L` is a finite free `𝒪_K`-module of rank `[L : K]`
-(blueprint `lem:OL-free`, Tian Lemma 9.1.1). Proof deferred. -/
+(blueprint `lem:OL-free`, Tian Lemma 9.1.1).
+
+The blueprint argument lifts a `k_K`-basis of `𝒪_L / π_K 𝒪_L` and uses
+`π_K`-adic completeness; we instead invoke the structure theory of finitely
+generated modules over the PID `𝒪_K` (the same theorem), via `𝒪_L` being the
+integral closure of `𝒪_K` in `L`. -/
 theorem free_finrank :
     Module.Free (ringOfIntegers p K) (ringOfIntegers p L) ∧
       Module.finrank (ringOfIntegers p K) (ringOfIntegers p L) = Module.finrank K L := by
-  sorry
+  -- `𝒪_K` acts on `L` through `K` (canonical subalgebra action) compatibly with `ℤ_[p]`.
+  haveI : IsScalarTower ℤ_[p] (ringOfIntegers p K) L :=
+    IsScalarTower.of_algebraMap_eq fun x => by
+      rw [IsScalarTower.algebraMap_apply (ringOfIntegers p K) K L,
+          ← IsScalarTower.algebraMap_apply ℤ_[p] (ringOfIntegers p K) K]
+      exact IsScalarTower.algebraMap_apply ℤ_[p] K L x
+  haveI : IsScalarTower (ringOfIntegers p K) (ringOfIntegers p L) L :=
+    IsScalarTower.of_algebraMap_eq fun _ => rfl
+  haveI : Algebra.IsIntegral ℤ_[p] (ringOfIntegers p K) :=
+    inferInstanceAs (Algebra.IsIntegral ℤ_[p] (integralClosure ℤ_[p] K))
+  -- `𝒪_L` is the integral closure of `𝒪_K` in `L`: integral over `ℤ_[p]` iff over `𝒪_K`.
+  haveI : IsIntegralClosure (ringOfIntegers p L) (ringOfIntegers p K) L := by
+    constructor
+    · exact Subtype.coe_injective
+    · intro x
+      refine ⟨fun hx => ⟨⟨x, isIntegral_trans (R := ℤ_[p]) x hx⟩, rfl⟩, ?_⟩
+      rintro ⟨y, rfl⟩
+      exact (show IsIntegral ℤ_[p] (y : L) from y.2).tower_top
+  -- `L / K` is separable (characteristic zero) and torsion-free over `𝒪_K`.
+  haveI : CharZero K := charZero_of_injective_algebraMap (algebraMap ℚ_[p] K).injective
+  haveI : Algebra.IsIntegral K L := Algebra.IsIntegral.of_finite K L
+  haveI : Algebra.IsSeparable K L := Algebra.IsSeparable.of_integral K L
+  haveI : FaithfulSMul (ringOfIntegers p K) (ringOfIntegers p L) :=
+    (faithfulSMul_iff_algebraMap_injective (ringOfIntegers p K) (ringOfIntegers p L)).2
+      fun a b hab => Subtype.ext ((algebraMap K L).injective (Subtype.ext_iff.1 hab))
+  haveI : Module.IsTorsionFree (ringOfIntegers p K) L :=
+    .trans_faithfulSMul (ringOfIntegers p K) (ringOfIntegers p L) L
+  exact ⟨IsIntegralClosure.module_free (ringOfIntegers p K) K L (ringOfIntegers p L),
+         IsIntegralClosure.rank (ringOfIntegers p K) K L (ringOfIntegers p L)⟩
 
 /-- The *residue degree* `f(L / K)` of an extension of `p`-adic fields
 (blueprint `def:residue-degree`): `f = [k_L : k_K]`, realised as the inertia
