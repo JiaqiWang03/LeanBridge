@@ -47,10 +47,6 @@ def ringOfIntegers : Subalgebra ℤ_[p] K := integralClosure ℤ_[p] K
 instance : IsFractionRing (ringOfIntegers p K) K :=
   integralClosure.isFractionRing_of_finite_extension ℚ_[p] K
 
-/-- A `p`-adic field has characteristic zero (it contains `ℚ_[p]`). -/
-theorem charZero : CharZero K :=
-  charZero_of_injective_algebraMap (algebraMap ℚ_[p] K).injective
-
 /-- The ring of integers of a `p`-adic field is a discrete valuation ring.
 
 This is blueprint `prop:padic-is-dvf` (a `p`-adic field is a complete DVF):
@@ -146,13 +142,12 @@ instance : IsIntegralClosure (ringOfIntegers p L) (ringOfIntegers p K) L := by
 
 instance : Algebra.IsIntegral K L := Algebra.IsIntegral.of_finite K L
 
-/-- `L / K` is separable since `K` has characteristic zero. -/
-instance : Algebra.IsSeparable K L :=
-  haveI := PadicField.charZero p K
-  Algebra.IsSeparable.of_integral K L
-
-instance : Module.Finite (ringOfIntegers p K) (ringOfIntegers p L) :=
-  IsIntegralClosure.finite (ringOfIntegers p K) K L (ringOfIntegers p L)
+/-- `K` has characteristic zero (it contains `ℚ_[p]`), hence `L / K` is separable.
+Phrased over `𝒪_K` so that `p` is fixed by the statement. -/
+instance : Module.Finite (ringOfIntegers p K) (ringOfIntegers p L) := by
+  haveI : CharZero K := charZero_of_injective_algebraMap (algebraMap ℚ_[p] K).injective
+  haveI : Algebra.IsSeparable K L := Algebra.IsSeparable.of_integral K L
+  exact IsIntegralClosure.finite (ringOfIntegers p K) K L (ringOfIntegers p L)
 
 omit [PadicField p L] in
 /-- `𝒪_L` is a finite free `𝒪_K`-module of rank `[L : K]`
@@ -165,6 +160,8 @@ integral closure of `𝒪_K` in `L`. -/
 theorem free_finrank :
     Module.Free (ringOfIntegers p K) (ringOfIntegers p L) ∧
       Module.finrank (ringOfIntegers p K) (ringOfIntegers p L) = Module.finrank K L := by
+  haveI : CharZero K := charZero_of_injective_algebraMap (algebraMap ℚ_[p] K).injective
+  haveI : Algebra.IsSeparable K L := Algebra.IsSeparable.of_integral K L
   haveI : FaithfulSMul (ringOfIntegers p K) (ringOfIntegers p L) :=
     (faithfulSMul_iff_algebraMap_injective (ringOfIntegers p K) (ringOfIntegers p L)).2
       fun a b hab => Subtype.ext ((algebraMap K L).injective (Subtype.ext_iff.1 hab))
@@ -189,6 +186,8 @@ case of `Ideal.sum_ramification_inertia`, specialised to the rings of integers
 of the `p`-adic fields `K ⊆ L`. -/
 theorem ramificationIdx_mul_inertiaDeg :
     ramificationIdx p K L * inertiaDeg p K L = Module.finrank K L := by
+  haveI : CharZero K := charZero_of_injective_algebraMap (algebraMap ℚ_[p] K).injective
+  haveI : Algebra.IsSeparable K L := Algebra.IsSeparable.of_integral K L
   have hp0 : IsLocalRing.maximalIdeal (ringOfIntegers p K) ≠ ⊥ := fun h =>
     IsDiscreteValuationRing.not_isField (ringOfIntegers p K)
       ((IsLocalRing.isField_iff_maximalIdeal_eq).2 h)
