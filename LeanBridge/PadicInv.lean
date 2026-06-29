@@ -48,7 +48,7 @@ instance : IsFractionRing (ringOfIntegers p K) K :=
   integralClosure.isFractionRing_of_finite_extension ℚ_[p] K
 
 /-- A `p`-adic field has characteristic zero (it contains `ℚ_[p]`). -/
-instance instCharZero : CharZero K :=
+theorem charZero : CharZero K :=
   charZero_of_injective_algebraMap (algebraMap ℚ_[p] K).injective
 
 /-- The ring of integers of a `p`-adic field is a discrete valuation ring.
@@ -118,6 +118,42 @@ def IsWildlyRamified : Prop := (p : ℕ) ∣ ramificationIdx p K L
 ### The residue degree and the identity `e * f = [L : K]` (blueprint §1.4)
 -/
 
+-- Shared structural instances for `L / K`, used by both results below.
+
+/-- `ℤ_[p]` acts on `L` through `𝒪_K`. -/
+instance : IsScalarTower ℤ_[p] (ringOfIntegers p K) L :=
+  IsScalarTower.of_algebraMap_eq fun x => by
+    rw [IsScalarTower.algebraMap_apply (ringOfIntegers p K) K L,
+        ← IsScalarTower.algebraMap_apply ℤ_[p] (ringOfIntegers p K) K]
+    exact IsScalarTower.algebraMap_apply ℤ_[p] K L x
+
+/-- `𝒪_K` acts on `L` through `𝒪_L`. -/
+instance : IsScalarTower (ringOfIntegers p K) (ringOfIntegers p L) L :=
+  IsScalarTower.of_algebraMap_eq fun _ => rfl
+
+instance : Algebra.IsIntegral ℤ_[p] (ringOfIntegers p K) :=
+  inferInstanceAs (Algebra.IsIntegral ℤ_[p] (integralClosure ℤ_[p] K))
+
+/-- `𝒪_L` is the integral closure of `𝒪_K` in `L`: an element of `L` is integral
+over `𝒪_K` iff it is integral over `ℤ_[p]`. -/
+instance : IsIntegralClosure (ringOfIntegers p L) (ringOfIntegers p K) L := by
+  constructor
+  · exact Subtype.coe_injective
+  · intro x
+    refine ⟨fun hx => ⟨⟨x, isIntegral_trans (R := ℤ_[p]) x hx⟩, rfl⟩, ?_⟩
+    rintro ⟨y, rfl⟩
+    exact (show IsIntegral ℤ_[p] (y : L) from y.2).tower_top
+
+instance : Algebra.IsIntegral K L := Algebra.IsIntegral.of_finite K L
+
+/-- `L / K` is separable since `K` has characteristic zero. -/
+instance : Algebra.IsSeparable K L :=
+  haveI := PadicField.charZero p K
+  Algebra.IsSeparable.of_integral K L
+
+instance : Module.Finite (ringOfIntegers p K) (ringOfIntegers p L) :=
+  IsIntegralClosure.finite (ringOfIntegers p K) K L (ringOfIntegers p L)
+
 omit [PadicField p L] in
 /-- `𝒪_L` is a finite free `𝒪_K`-module of rank `[L : K]`
 (blueprint `lem:OL-free`, Tian Lemma 9.1.1).
@@ -129,28 +165,6 @@ integral closure of `𝒪_K` in `L`. -/
 theorem free_finrank :
     Module.Free (ringOfIntegers p K) (ringOfIntegers p L) ∧
       Module.finrank (ringOfIntegers p K) (ringOfIntegers p L) = Module.finrank K L := by
-  -- `𝒪_K` acts on `L` through `K` (canonical subalgebra action) compatibly with `ℤ_[p]`.
-  haveI : IsScalarTower ℤ_[p] (ringOfIntegers p K) L :=
-    IsScalarTower.of_algebraMap_eq fun x => by
-      rw [IsScalarTower.algebraMap_apply (ringOfIntegers p K) K L,
-          ← IsScalarTower.algebraMap_apply ℤ_[p] (ringOfIntegers p K) K]
-      exact IsScalarTower.algebraMap_apply ℤ_[p] K L x
-  haveI : IsScalarTower (ringOfIntegers p K) (ringOfIntegers p L) L :=
-    IsScalarTower.of_algebraMap_eq fun _ => rfl
-  haveI : Algebra.IsIntegral ℤ_[p] (ringOfIntegers p K) :=
-    inferInstanceAs (Algebra.IsIntegral ℤ_[p] (integralClosure ℤ_[p] K))
-  -- `𝒪_L` is the integral closure of `𝒪_K` in `L`: integral over `ℤ_[p]` iff over `𝒪_K`.
-  haveI : IsIntegralClosure (ringOfIntegers p L) (ringOfIntegers p K) L := by
-    constructor
-    · exact Subtype.coe_injective
-    · intro x
-      refine ⟨fun hx => ⟨⟨x, isIntegral_trans (R := ℤ_[p]) x hx⟩, rfl⟩, ?_⟩
-      rintro ⟨y, rfl⟩
-      exact (show IsIntegral ℤ_[p] (y : L) from y.2).tower_top
-  -- `L / K` is separable (characteristic zero) and torsion-free over `𝒪_K`.
-  haveI : CharZero K := charZero_of_injective_algebraMap (algebraMap ℚ_[p] K).injective
-  haveI : Algebra.IsIntegral K L := Algebra.IsIntegral.of_finite K L
-  haveI : Algebra.IsSeparable K L := Algebra.IsSeparable.of_integral K L
   haveI : FaithfulSMul (ringOfIntegers p K) (ringOfIntegers p L) :=
     (faithfulSMul_iff_algebraMap_injective (ringOfIntegers p K) (ringOfIntegers p L)).2
       fun a b hab => Subtype.ext ((algebraMap K L).injective (Subtype.ext_iff.1 hab))
@@ -168,10 +182,19 @@ def inertiaDeg : ℕ :=
     (IsLocalRing.maximalIdeal (ringOfIntegers p L))
 
 /-- The fundamental identity `e * f = [L : K]`
-(blueprint `prop:ef-eq-degree`, Tian Prop. 9.1.4). Proof deferred. -/
+(blueprint `prop:ef-eq-degree`, Tian Prop. 9.1.4).
+
+This is `Ideal.ramificationIdx_mul_inertiaDeg_of_isLocalRing`, the local (DVR)
+case of `Ideal.sum_ramification_inertia`, specialised to the rings of integers
+of the `p`-adic fields `K ⊆ L`. -/
 theorem ramificationIdx_mul_inertiaDeg :
     ramificationIdx p K L * inertiaDeg p K L = Module.finrank K L := by
-  sorry
+  have hp0 : IsLocalRing.maximalIdeal (ringOfIntegers p K) ≠ ⊥ := fun h =>
+    IsDiscreteValuationRing.not_isField (ringOfIntegers p K)
+      ((IsLocalRing.isField_iff_maximalIdeal_eq).2 h)
+  simpa only [ramificationIdx, inertiaDeg] using
+    Ideal.ramificationIdx_mul_inertiaDeg_of_isLocalRing
+      (R := ringOfIntegers p K) (S := ringOfIntegers p L) (K := K) (L := L) hp0
 
 end Extension
 
