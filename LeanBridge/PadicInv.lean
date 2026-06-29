@@ -47,6 +47,10 @@ def ringOfIntegers : Subalgebra ℤ_[p] K := integralClosure ℤ_[p] K
 instance : IsFractionRing (ringOfIntegers p K) K :=
   integralClosure.isFractionRing_of_finite_extension ℚ_[p] K
 
+/-- A `p`-adic field has characteristic zero (it contains `ℚ_[p]`). -/
+instance instCharZero : CharZero K :=
+  charZero_of_injective_algebraMap (algebraMap ℚ_[p] K).injective
+
 /-- The ring of integers of a `p`-adic field is a discrete valuation ring.
 
 This is blueprint `prop:padic-is-dvf` (a `p`-adic field is a complete DVF):
