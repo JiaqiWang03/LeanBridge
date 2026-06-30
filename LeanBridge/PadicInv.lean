@@ -188,7 +188,7 @@ theorem integralClosure_integer_eq :
     exact hx.tower_top
 
 /-- `𝒪_K` is a local ring (transferred from the valuation ring above). -/
-theorem isLocalRing_integralClosure_Zp :
+instance isLocalRing_integralClosure_Zp :
     IsLocalRing (integralClosure ℤ_[p] K) := by
   haveI : IsLocalRing
       ↥(integralClosure (Valued.v : Valuation (Qhat p) (Γ)).integer K).toSubring :=
@@ -196,7 +196,7 @@ theorem isLocalRing_integralClosure_Zp :
       (IsLocalRing (integralClosure (Valued.v : Valuation (Qhat p) (Γ)).integer K))
   exact (RingEquiv.subringCongr (integralClosure_integer_eq p K)).isLocalRing
 
-theorem isDedekind : IsDedekindDomain (integralClosure ℤ_[p] K) := by
+instance isDedekind : IsDedekindDomain (integralClosure ℤ_[p] K) := by
   haveI : CharZero K := charZero_of_injective_algebraMap (algebraMap ℚ_[p] K).injective
   haveI : Algebra.IsSeparable ℚ_[p] K := Algebra.IsSeparable.of_integral ℚ_[p] K
   exact IsIntegralClosure.isDedekindDomain ℤ_[p] ℚ_[p] K (integralClosure ℤ_[p] K)
@@ -213,12 +213,6 @@ theorem notField : ¬ IsField (integralClosure ℤ_[p] K) := by
   exact (IsDiscreteValuationRing.not_isField ℤ_[p])
     ((Algebra.IsIntegral.isField_iff_isField hinj).mpr hF)
 
-theorem isDVR : IsDiscreteValuationRing (integralClosure ℤ_[p] K) := by
-  haveI := isLocalRing_integralClosure_Zp p K
-  haveI := isDedekind p K
-  exact ((IsDiscreteValuationRing.TFAE (integralClosure ℤ_[p] K) (notField p K)).out 2 0).mp
-    (isDedekind p K)
-
 /-- The ring of integers of a `p`-adic field is a discrete valuation ring.
 
 This is blueprint `prop:padic-is-dvf` (a `p`-adic field is a complete DVF):
@@ -226,8 +220,11 @@ the integral closure of the complete DVR `ℤ_[p]` in a finite extension is agai
 a complete DVR. It is left as the next target to prove; it is the single fact on
 which the normalized valuation below rests. -/
 instance instIsDiscreteValuationRing :
-    IsDiscreteValuationRing (ringOfIntegers p K) :=
-  isDVR p K
+    IsDiscreteValuationRing (ringOfIntegers p K) := by
+    haveI := isLocalRing_integralClosure_Zp p K
+    haveI := isDedekind p K
+    exact ((IsDiscreteValuationRing.TFAE (integralClosure ℤ_[p] K) (notField p K)).out 2 0).mp
+      (isDedekind p K)
 
 /-- `𝒪_K` is `𝔪_K`-adically complete (the completeness half of
 `prop:padic-is-dvf`): the integral closure of the complete DVR `ℤ_[p]` in a
