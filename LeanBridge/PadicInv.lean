@@ -49,152 +49,58 @@ instance : IsFractionRing (ringOfIntegers p K) K :=
 
 /-! ### Proof that `𝒪_K` is a discrete valuation ring (`prop:padic-is-dvf`)
 
-We realize `K` as a finite extension of the valued completion
-`ℚ̂ := (Rat.padicValuation p).Completion`, which is isomorphic to `ℚ_[p]`. We give
-`ℚ̂` its rank-one valuation and spectral norm, show that the integral closure of the
-valuation integers `𝒪[ℚ̂]` in `K` is a valuation ring (via the spectral norm), transfer
-this to `𝒪_K` through the isomorphism `𝒪[ℚ̂] ≃ ℤ_[p]`, and conclude with the
-local-Dedekind-domain characterization of discrete valuation rings. -/
+`ℚ_[p]` is a complete nontrivially-normed field, so its spectral norm extends `‖·‖` to the
+finite extension `K`. An element of `K` whose spectral norm is `≤ 1` is integral over `ℤ_[p]`
+(its minimal polynomial has coefficients of norm `≤ 1`, i.e. in `ℤ_[p]`); hence
+`𝒪_K = integralClosure ℤ_[p] K` is exactly the closed unit ball of the spectral norm, so it is
+a valuation ring. Being a local Dedekind domain that is not a field, it is a DVR. -/
 
-/-- The valued completion of `ℚ` at the `p`-adic valuation; it is isomorphic to `ℚ_[p]`. -/
-abbrev Qhat := (Rat.padicValuation p).Completion
+instance : Algebra.IsAlgebraic ℚ_[p] K := Algebra.IsAlgebraic.of_finite ℚ_[p] K
 
-/-- The value group `ℤᵐ⁰` of the `p`-adic valuation. -/
-abbrev Γ : Type := WithZero (Multiplicative ℤ)
-
-/-- The valuation on `ℚ̂` is nontrivial. -/
-instance instIsNontrivial : (Valued.v : Valuation (Qhat p) (Γ)).IsNontrivial := by
-  rw [Valuation.IsNontrivial_iff_exists_one_lt]
-  refine ⟨(((WithVal.equiv (Rat.padicValuation p)).symm ((p : ℚ)⁻¹) :
-      WithVal (Rat.padicValuation p)) : Qhat p), ?_⟩
-  rw [Valued.valuedCompletion_apply, ← WithVal.val_apply_equiv, RingEquiv.apply_symm_apply,
-    map_inv₀, Rat.padicValuation_self]
-  rw [← WithZero.exp_zero, ← WithZero.exp_neg, WithZero.exp_lt_exp]
-  norm_num
-
-instance instRankOne : (Valued.v : Valuation (Qhat p) (Γ)).RankOne :=
-  Valuation.IsRankOneDiscrete.rankOne (Valued.v) (e := 2) (by norm_num)
-
-/-- `ℚ̂` is a `ℚ_[p]`-algebra via the isomorphism `ℚ̂ ≃ ℚ_[p]`. -/
-instance instAlgebraQhatQp : Algebra (Qhat p) ℚ_[p] :=
-  (Padic.withValRingEquiv (p := p)).toRingHom.toAlgebra
-
-/-- `K` is a `ℚ̂`-algebra (through `ℚ_[p]`). -/
-instance instAlgebraQhatK : Algebra (Qhat p) K :=
-  ((algebraMap ℚ_[p] K).comp (Padic.withValRingEquiv (p := p)).toRingHom).toAlgebra
-
-instance : IsScalarTower (Qhat p) ℚ_[p] K :=
-  IsScalarTower.of_algebraMap_eq fun _ => rfl
-
-instance instModuleFiniteQhatQp : Module.Finite (Qhat p) ℚ_[p] :=
-  Module.Finite.of_surjective (Algebra.linearMap (Qhat p) ℚ_[p])
-    (Padic.withValRingEquiv (p := p)).surjective
-
-instance instAlgebraicQhatQp : Algebra.IsAlgebraic (Qhat p) ℚ_[p] :=
-  Algebra.IsAlgebraic.of_finite (Qhat p) ℚ_[p]
-
-instance instAlgebraicQhatK : Algebra.IsAlgebraic (Qhat p) K :=
-  Algebra.IsAlgebraic.trans (Qhat p) ℚ_[p] K
-
-/-- The (nontrivially) normed field structure on `ℚ̂` induced by its rank-one valuation. -/
-instance instNontriviallyNormedField : NontriviallyNormedField (Qhat p) :=
-  Valued.toNontriviallyNormedField (Qhat p) (Γ)
-
-/-- If the spectral norm of `x : K` is `≤ 1`, then `x` is integral over the valuation
-integers `𝒪[ℚ̂]`. -/
-theorem isIntegral_of_spectralNorm_le_one {x : K} (hx : spectralNorm (Qhat p) K x ≤ 1) :
-    IsIntegral (Valued.v : Valuation (Qhat p) (Γ)).integer x := by
-  have : minpoly (Qhat p) x ∈
-      Polynomial.lifts (Valued.v : Valuation (Qhat p) (Γ)).integer.subtype := by
+/-- If the spectral norm of `x : K` over `ℚ_[p]` is `≤ 1`, then `x` is integral over `ℤ_[p]`:
+the coefficients of its minimal polynomial have norm `≤ 1`, hence lie in `ℤ_[p]`. -/
+theorem isIntegral_of_spectralNorm_le_one {x : K} (hx : spectralNorm ℚ_[p] K x ≤ 1) :
+    IsIntegral ℤ_[p] x := by
+  have hlift : minpoly ℚ_[p] x ∈ Polynomial.lifts (algebraMap ℤ_[p] ℚ_[p]) := by
     refine (Polynomial.lifts_iff_coeff_lifts _).mpr fun i ↦ ?_
-    have := (ciSup_le_iff (spectralValueTerms_bddAbove ..)).mp hx i
-    simp only [spectralValueTerms] at this
-    split_ifs at this with h
-    · conv_rhs at this => rw [← Real.one_rpow (1 / (↑(minpoly (Qhat p) x).natDegree - ↑i) : ℝ)]
-      rw [Real.rpow_le_rpow_iff (by positivity) (by positivity) (by aesop)] at this
-      simpa [Valuation.mem_integer_iff] using this
+    have hi := (ciSup_le_iff (spectralValueTerms_bddAbove ..)).mp hx i
+    simp only [spectralValueTerms] at hi
+    split_ifs at hi with h
+    · conv_rhs at hi => rw [← Real.one_rpow (1 / (↑(minpoly ℚ_[p] x).natDegree - ↑i) : ℝ)]
+      rw [Real.rpow_le_rpow_iff (by positivity) (by positivity) (by aesop)] at hi
+      exact ⟨⟨_, hi⟩, rfl⟩
     obtain h | h := (le_of_not_gt h).eq_or_lt
-    · simp [← h, minpoly.monic (Algebra.IsAlgebraic.isAlgebraic x).isIntegral, one_mem]
-    · simp [Polynomial.coeff_eq_zero_of_natDegree_lt h, zero_mem]
-  obtain ⟨P, hP, _, hP'⟩ := Polynomial.lifts_and_degree_eq_and_monic this
+    · rw [← h]
+      exact ⟨1, (map_one _).trans
+        (minpoly.monic (Algebra.IsAlgebraic.isAlgebraic x).isIntegral).symm⟩
+    · rw [Polynomial.coeff_eq_zero_of_natDegree_lt h]
+      exact ⟨0, map_zero _⟩
+  obtain ⟨P, hP, _, hP'⟩ := Polynomial.lifts_and_degree_eq_and_monic hlift
     (minpoly.monic (Algebra.IsAlgebraic.isAlgebraic x).isIntegral)
   refine ⟨P, hP', ?_⟩
-  rw [← Polynomial.aeval_def, ← Polynomial.aeval_map_algebraMap (Qhat p),
-    show (algebraMap (↥(Valued.v : Valuation (Qhat p) (Γ)).integer) (Qhat p)) =
-        (Valued.v : Valuation (Qhat p) (Γ)).integer.subtype from rfl, hP, minpoly.aeval]
+  rw [← Polynomial.aeval_def, ← Polynomial.aeval_map_algebraMap ℚ_[p], hP, minpoly.aeval]
 
-/-- The spectral norm is multiplicative, hence inverts. -/
+/-- The spectral norm over `ℚ_[p]` is multiplicative, hence inverts. -/
 theorem spectralNorm_inv (x : K) :
-    spectralNorm (Qhat p) K x⁻¹ = (spectralNorm (Qhat p) K x)⁻¹ := by
+    spectralNorm ℚ_[p] K x⁻¹ = (spectralNorm ℚ_[p] K x)⁻¹ := by
   rcases eq_or_ne x 0 with rfl | hx0
   · simp [spectralNorm_zero]
-  · have h := spectralAlgNorm_mul (K := Qhat p) (L := K) x x⁻¹
+  · have h := spectralAlgNorm_mul (K := ℚ_[p]) (L := K) x x⁻¹
     rw [mul_inv_cancel₀ hx0, spectralAlgNorm_def, spectralAlgNorm_def, spectralAlgNorm_def,
       spectralNorm_one] at h
     exact eq_inv_of_mul_eq_one_right h.symm
 
-/-- The integral closure of `𝒪[ℚ̂]` in `K` is a valuation ring. -/
-instance instValuationRing :
-    ValuationRing (integralClosure (Valued.v : Valuation (Qhat p) (Γ)).integer K) := by
+/-- `𝒪_K = integralClosure ℤ_[p] K` is the closed unit ball of the spectral norm, hence a
+valuation ring: every `x : K` has `x` or `x⁻¹` of spectral norm `≤ 1`. -/
+instance instValuationRing : ValuationRing (integralClosure ℤ_[p] K) := by
   refine ValuationSubring.instValuationRingSubtypeMem
-    (A := ⟨(integralClosure (Valued.v : Valuation (Qhat p) (Γ)).integer K).toSubring, ?_⟩)
+    (A := ⟨(integralClosure ℤ_[p] K).toSubring, ?_⟩)
   intro x
-  obtain hx | hx := le_total (spectralNorm (Qhat p) K x) 1
+  obtain hx | hx := le_total (spectralNorm ℚ_[p] K x) 1
   · exact Or.inl (isIntegral_of_spectralNorm_le_one (p := p) (K := K) hx)
   · refine Or.inr (isIntegral_of_spectralNorm_le_one (p := p) (K := K) ?_)
     rw [spectralNorm_inv]
     exact inv_le_one_of_one_le₀ hx
-
-/-- `𝒪[ℚ̂]` is a `ℤ_[p]`-algebra via the isomorphism `𝒪[ℚ̂] ≃ ℤ_[p]`. -/
-instance instAlgebraZpInteger :
-    Algebra ℤ_[p] ↥(Valued.v : Valuation (Qhat p) (Γ)).integer :=
-  (PadicInt.withValIntegersRingEquiv (p := p)).symm.toRingHom.toAlgebra
-
-instance instIntegerIntegral : Algebra.IsIntegral ℤ_[p]
-    ↥(Valued.v : Valuation (Qhat p) (Γ)).integer := by
-  have : Module.Finite ℤ_[p] ↥(Valued.v : Valuation (Qhat p) (Γ)).integer :=
-    Module.Finite.of_surjective (Algebra.linearMap ℤ_[p] _)
-      (PadicInt.withValIntegersRingEquiv (p := p)).symm.surjective
-  exact Algebra.IsIntegral.of_finite ℤ_[p] _
-
-instance : IsScalarTower ℤ_[p] ↥(Valued.v : Valuation (Qhat p) (Γ)).integer K := by
-  refine IsScalarTower.of_algebraMap_eq fun x => ?_
-  rw [IsScalarTower.algebraMap_apply ℤ_[p] ℚ_[p] K,
-    IsScalarTower.algebraMap_apply (↥(Valued.v : Valuation (Qhat p) (Γ)).integer) (Qhat p) K,
-    IsScalarTower.algebraMap_apply (Qhat p) ℚ_[p] K]
-  congr 1
-  have compat : ∀ y : ↥(Valued.v : Valuation (Qhat p) (Γ)).integer,
-      Padic.withValRingEquiv (p := p) (y : Qhat p)
-        = ((PadicInt.withValIntegersRingEquiv (p := p) y : ℤ_[p]) : ℚ_[p]) := fun y => rfl
-  show algebraMap ℤ_[p] ℚ_[p] x =
-    (Padic.withValRingEquiv (p := p))
-      (((PadicInt.withValIntegersRingEquiv (p := p)).symm x : Qhat p))
-  rw [compat, RingEquiv.apply_symm_apply]
-  rfl
-
-omit [PadicField p K] in
-/-- The integral closure of `𝒪[ℚ̂]` in `K` coincides, as a subring of `K`, with that of
-`ℤ_[p]` (i.e. `𝒪_K`). -/
-theorem integralClosure_integer_eq :
-    (integralClosure (Valued.v : Valuation (Qhat p) (Γ)).integer K).toSubring
-      = (integralClosure ℤ_[p] K).toSubring := by
-  ext x
-  rw [Subalgebra.mem_toSubring, Subalgebra.mem_toSubring, mem_integralClosure_iff,
-    mem_integralClosure_iff]
-  constructor
-  · intro hx
-    exact isIntegral_trans (R := ℤ_[p]) x hx
-  · intro hx
-    exact hx.tower_top
-
-/-- `𝒪_K` is a local ring (transferred from the valuation ring above). -/
-instance isLocalRing_integralClosure_Zp :
-    IsLocalRing (integralClosure ℤ_[p] K) := by
-  haveI : IsLocalRing
-      ↥(integralClosure (Valued.v : Valuation (Qhat p) (Γ)).integer K).toSubring :=
-    inferInstanceAs
-      (IsLocalRing (integralClosure (Valued.v : Valuation (Qhat p) (Γ)).integer K))
-  exact (RingEquiv.subringCongr (integralClosure_integer_eq p K)).isLocalRing
 
 instance isDedekind : IsDedekindDomain (integralClosure ℤ_[p] K) := by
   haveI : CharZero K := charZero_of_injective_algebraMap (algebraMap ℚ_[p] K).injective
@@ -213,18 +119,13 @@ theorem notField : ¬ IsField (integralClosure ℤ_[p] K) := by
   exact (IsDiscreteValuationRing.not_isField ℤ_[p])
     ((Algebra.IsIntegral.isField_iff_isField hinj).mpr hF)
 
-/-- The ring of integers of a `p`-adic field is a discrete valuation ring.
-
-This is blueprint `prop:padic-is-dvf` (a `p`-adic field is a complete DVF):
-the integral closure of the complete DVR `ℤ_[p]` in a finite extension is again
-a complete DVR. It is left as the next target to prove; it is the single fact on
-which the normalized valuation below rests. -/
+/-- The ring of integers of a `p`-adic field is a discrete valuation ring
+(blueprint `prop:padic-is-dvf`): `𝒪_K` is a valuation ring (`instValuationRing`, hence local),
+a Dedekind domain and not a field, so the DVR characterization applies. -/
 instance instIsDiscreteValuationRing :
     IsDiscreteValuationRing (ringOfIntegers p K) := by
-    haveI := isLocalRing_integralClosure_Zp p K
-    haveI := isDedekind p K
-    exact ((IsDiscreteValuationRing.TFAE (integralClosure ℤ_[p] K) (notField p K)).out 2 0).mp
-      (isDedekind p K)
+  have hD : IsDedekindDomain (integralClosure ℤ_[p] K) := inferInstance
+  exact ((IsDiscreteValuationRing.TFAE (integralClosure ℤ_[p] K) (notField p K)).out 2 0).mp hD
 
 /-- `𝒪_K` is `𝔪_K`-adically complete (the completeness half of
 `prop:padic-is-dvf`): the integral closure of the complete DVR `ℤ_[p]` in a
