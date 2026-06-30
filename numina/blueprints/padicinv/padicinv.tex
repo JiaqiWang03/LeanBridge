@@ -352,7 +352,8 @@ well-defined up to the square of a unit of $\OK^\times$.
 \begin{definition}[Discriminant exponent]
 \label{def:disc-exponent}
 \lean{PadicField.Extension.discriminantExponent}
-\uses{def:discriminant,def:ramification-index}
+\leanfile{LeanBridge/PadicInv.lean}
+\uses{def:discriminant, def:ramification-index}
 \notready
 Writing $\disc(L/K)=\pi_K^{\,d}u$ with $u\in\OK^\times$, the
 \knowl{lf.discriminant_exponent}{discriminant exponent} of $L/K$ is
@@ -369,7 +370,8 @@ discriminant exponents are those of $K/\Qp$ and $L/\Qp$.
 
 \begin{definition}[Different exponent]
 \label{def:different-exponent}
-\lean{differentIdeal}
+\lean{PadicField.Extension.differentExponent}
+\leanfile{LeanBridge/PadicInv.lean}
 \uses{def:ramification-index}
 \mathlibok
 The different $\different_{L/K}\subseteq\OL$ is an ideal; write
@@ -381,7 +383,8 @@ $\disc(L/K)=\Nm_{L/K}(\different_{L/K})$.
 \begin{proposition}[Discriminant exponent via the different]
 \label{prop:disc-eq-f-delta}
 \lean{PadicField.Extension.discExponent_eq_inertiaDeg_mul_differentExponent}
-\uses{def:disc-exponent,def:different-exponent,def:residue-degree}
+\leanfile{LeanBridge/PadicInv.lean}
+\uses{def:disc-exponent, def:different-exponent, def:residue-degree}
 \notready
 $d(L/K)=f(L/K)\cdot\delta(L/K)$, since $\Nm_{L/K}(\mfL)=\mfK^{\,f}$ and the
 discriminant is the norm of the different.
@@ -394,7 +397,8 @@ discriminant is the norm of the different.
 \begin{theorem}[Dedekind's different theorem]
 \label{thm:dedekind-different}
 \lean{PadicField.Extension.differentExponent_tame}
-\uses{def:different-exponent,def:tame-wild}
+\leanfile{LeanBridge/PadicInv.lean}
+\uses{def:different-exponent, def:tame-wild}
 \notready
 The different exponent satisfies $\delta\ge e-1$, with
 \[
@@ -406,14 +410,17 @@ and $\delta\ge e$ when $p\mid e$ (wild). In particular $\delta=0\iff e=1$.
 \begin{theorem}[$d=0\iff$ unramified]
 \label{thm:disc-zero-iff-unramified}
 \lean{PadicField.Extension.discExponent_eq_zero_iff_unramified}
-\uses{thm:dedekind-different,prop:disc-eq-f-delta,def:tame-wild}
+\leanfile{LeanBridge/PadicInv.lean}
+\uses{thm:dedekind-different, prop:disc-eq-f-delta, def:tame-wild}
 \notready
 $d(L/K)=0$ if and only if $L/K$ is unramified ($e=1$).
 \end{theorem}
 
 \begin{corollary}[Tame discriminant exponent]
 \label{cor:tame-disc}
-\uses{thm:dedekind-different,prop:disc-eq-f-delta}
+\lean{PadicField.Extension.discExponent_tame}
+\leanfile{LeanBridge/PadicInv.lean}
+\uses{thm:dedekind-different, prop:disc-eq-f-delta}
 \notready
 If $L/K$ is tamely ramified then $d(L/K)=f(e-1)$; for a totally tamely ramified
 extension ($f=1$) this gives $d=e-1$.
@@ -806,7 +813,8 @@ well-defined up to the square of a unit of $\OK^\times$.
 \begin{definition}[Discriminant exponent]
 \label{def:disc-exponent}
 \lean{PadicField.Extension.discriminantExponent}
-\uses{def:discriminant,def:ramification-index}
+\leanfile{LeanBridge/PadicInv.lean}
+\uses{def:discriminant, def:ramification-index}
 \notready
 Writing $\disc(L/K)=\pi_K^{\,d}u$ with $u\in\OK^\times$, the
 \knowl{lf.discriminant_exponent}{discriminant exponent} of $L/K$ is
@@ -823,7 +831,8 @@ discriminant exponents are those of $K/\Qp$ and $L/\Qp$.
 
 \begin{definition}[Different exponent]
 \label{def:different-exponent}
-\lean{differentIdeal}
+\lean{PadicField.Extension.differentExponent}
+\leanfile{LeanBridge/PadicInv.lean}
 \uses{def:ramification-index}
 \mathlibok
 The different $\different_{L/K}\subseteq\OL$ is an ideal; write
@@ -835,7 +844,8 @@ $\disc(L/K)=\Nm_{L/K}(\different_{L/K})$.
 \begin{proposition}[Discriminant exponent via the different]
 \label{prop:disc-eq-f-delta}
 \lean{PadicField.Extension.discExponent_eq_inertiaDeg_mul_differentExponent}
-\uses{def:disc-exponent,def:different-exponent,def:residue-degree}
+\leanfile{LeanBridge/PadicInv.lean}
+\uses{def:disc-exponent, def:different-exponent, def:residue-degree}
 \notready
 $d(L/K)=f(L/K)\cdot\delta(L/K)$, since $\Nm_{L/K}(\mfL)=\mfK^{\,f}$ and the
 discriminant is the norm of the different.
@@ -848,7 +858,8 @@ discriminant is the norm of the different.
 \begin{theorem}[Dedekind's different theorem]
 \label{thm:dedekind-different}
 \lean{PadicField.Extension.differentExponent_tame}
-\uses{def:different-exponent,def:tame-wild}
+\leanfile{LeanBridge/PadicInv.lean}
+\uses{def:different-exponent, def:tame-wild}
 \notready
 The different exponent satisfies $\delta\ge e-1$, with
 \[
@@ -860,14 +871,17 @@ and $\delta\ge e$ when $p\mid e$ (wild). In particular $\delta=0\iff e=1$.
 \begin{theorem}[$d=0\iff$ unramified]
 \label{thm:disc-zero-iff-unramified}
 \lean{PadicField.Extension.discExponent_eq_zero_iff_unramified}
-\uses{thm:dedekind-different,prop:disc-eq-f-delta,def:tame-wild}
+\leanfile{LeanBridge/PadicInv.lean}
+\uses{thm:dedekind-different, prop:disc-eq-f-delta, def:tame-wild}
 \notready
 $d(L/K)=0$ if and only if $L/K$ is unramified ($e=1$).
 \end{theorem}
 
 \begin{corollary}[Tame discriminant exponent]
 \label{cor:tame-disc}
-\uses{thm:dedekind-different,prop:disc-eq-f-delta}
+\lean{PadicField.Extension.discExponent_tame}
+\leanfile{LeanBridge/PadicInv.lean}
+\uses{thm:dedekind-different, prop:disc-eq-f-delta}
 \notready
 If $L/K$ is tamely ramified then $d(L/K)=f(e-1)$; for a totally tamely ramified
 extension ($f=1$) this gives $d=e-1$.
