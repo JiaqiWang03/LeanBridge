@@ -424,32 +424,184 @@ def discriminantExponent : ℕ :=
     (Ideal.span {Algebra.discr (𝒪 K)
       ⇑(Module.Free.chooseBasis (𝒪 K) (𝒪 L))})
 
-/-- The discriminant exponent equals the residue degree times the different exponent
-(blueprint `prop:disc-eq-f-delta`): `d = f · δ`, since `N_{L/K}(𝔪_L) = 𝔪_K ^ f` and
-the discriminant is the norm of the different. -/
-theorem discExponent_eq_inertiaDeg_mul_differentExponent :
-    discriminantExponent K L = inertiaDeg K L * differentExponent K L := by
+/-! ### Reduction of the discriminant identities to a single bridge lemma
+
+The discriminant statements below rest on the relative identity `disc(L/K) =
+N_{L/K}(𝔡_{L/K})` (`relNorm_differentIdeal_eq_span_discr`). Given that identity,
+`d = f · δ` and `d = 0 ↔ e = 1` are valuation-theoretic computations in the DVRs
+`𝒪_K`, `𝒪_L`, using `N_{L/K}(𝔪_L) = 𝔪_K ^ f` and multiplicities. -/
+
+attribute [local instance] FractionRing.liftAlgebra
+
+/-- In a discrete valuation ring, `multiplicity 𝔪 (𝔪 ^ n) = n`. -/
+private theorem multiplicity_maximalIdeal_pow {R : Type*} [CommRing R] [IsDomain R]
+    [IsDiscreteValuationRing R] (n : ℕ) :
+    multiplicity (IsLocalRing.maximalIdeal R) ((IsLocalRing.maximalIdeal R) ^ n) = n := by
+  refine multiplicity_pow_self ?_ ?_ n
+  · rw [Ideal.zero_eq_bot]; exact IsDiscreteValuationRing.not_a_field R
+  · exact Ideal.isUnit_iff.not.mpr (IsLocalRing.maximalIdeal.isMaximal R).ne_top
+
+/-- In a discrete valuation ring, a nonzero ideal is `𝔪 ^ (multiplicity 𝔪 I)`. -/
+private theorem eq_maximalIdeal_pow_multiplicity {R : Type*} [CommRing R] [IsDomain R]
+    [IsDiscreteValuationRing R] {I : Ideal R} (hI : I ≠ ⊥) :
+    I = (IsLocalRing.maximalIdeal R) ^ (multiplicity (IsLocalRing.maximalIdeal R) I) := by
+  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible R
+  obtain ⟨n, hn⟩ := IsDiscreteValuationRing.ideal_eq_span_pow_irreducible hI hϖ
+  have hIn : I = (IsLocalRing.maximalIdeal R) ^ n := by
+    rw [hn, ← Ideal.span_singleton_pow, ← hϖ.maximalIdeal_eq]
+  have hmult : multiplicity (IsLocalRing.maximalIdeal R) I = n := by
+    rw [hIn]; exact multiplicity_maximalIdeal_pow n
+  rw [hmult]; exact hIn
+
+/-- Separability of `L / K` transported to the canonical fraction rings of `𝒪_K`,
+`𝒪_L`, as required by Mathlib's relative different-ideal API. -/
+theorem separable_fractionRing :
+    Algebra.IsSeparable (FractionRing (𝒪 K)) (FractionRing (𝒪 L)) := by
+  haveI : Algebra.IsSeparable K L := isSeparable_of_padicExtension p K L
+  refine Algebra.IsSeparable.of_equiv_equiv
+    (FractionRing.algEquiv (𝒪 K) K).symm.toRingEquiv
+    (FractionRing.algEquiv (𝒪 L) L).symm.toRingEquiv ?_
+  ext x
+  have h := IsFractionRing.algEquiv_commutes (FractionRing.algEquiv (𝒪 K) K)
+    (FractionRing.algEquiv (𝒪 L) L) ((FractionRing.algEquiv (𝒪 K) K).symm x)
+  simp only [AlgEquiv.apply_symm_apply] at h
+  simp only [RingHom.coe_comp, Function.comp_apply]
+  exact (AlgEquiv.eq_symm_apply _).mpr h.symm
+
+theorem inertiaDeg_ne_zero : inertiaDeg K L ≠ 0 :=
+  (Ideal.inertiaDeg_pos (IsLocalRing.maximalIdeal (𝒪 K))
+    (IsLocalRing.maximalIdeal (𝒪 L))).ne'
+
+/-- **Bridge lemma (A), blueprint `prop:disc-eq-f-delta` core.** The relative
+"discriminant equals the norm of the different": `N_{L/K}(𝔡_{L/K}) = (disc(L/K))`
+as ideals of `𝒪_K`. Mathlib only has the absolute (number-field, base `ℤ`) version
+`NumberField.absNorm_differentIdeal`; the relative statement over a general DVR base
+is not yet available, and proving it needs either monogenicity `𝒪_L = 𝒪_K[x]` (not in
+Mathlib for local extensions) or the trace-dual/determinant index argument ported to
+the relative setting. Left as `sorry`. -/
+theorem relNorm_differentIdeal_eq_span_discr :
+    Ideal.relNorm (𝒪 K) (differentIdeal (𝒪 K) (𝒪 L)) =
+      Ideal.span {Algebra.discr (𝒪 K) ⇑(Module.Free.chooseBasis (𝒪 K) (𝒪 L))} :=
   sorry
 
+open IsLocalRing in
+/-- `𝔪_L` is unramified over `𝒪_K` iff `e(L/K) = 1`. The forward direction is
+`Ideal.ramificationIdx_eq_one_of_isUnramifiedAt`; the converse uses separability of the
+residue-field extension `k_L / k_K`, which holds because the residue fields are finite
+(so perfect): `k_K` is finite as `𝒪_K` is module-finite over `ℤ_[p]` whose residue field
+is `ZMod p`. -/
+theorem isUnramifiedAt_maximalIdeal_iff :
+    Algebra.IsUnramifiedAt (𝒪 K) (IsLocalRing.maximalIdeal (𝒪 L)) ↔ IsUnramified K L := by
+  haveI : NeZero p := ⟨(Fact.out (p := p.Prime)).ne_zero⟩
+  haveI hfin : Finite (IsLocalRing.ResidueField (𝒪 K)) := by
+    haveI : Finite (IsLocalRing.ResidueField ℤ_[p]) :=
+      Finite.of_equiv _ (PadicInt.residueField (p := p)).symm.toEquiv
+    exact IsLocalRing.ResidueField.finite_of_finite (R := ℤ_[p]) (S := 𝒪 K) inferInstance
+  have hp : maximalIdeal (𝒪 L) ≠ ⊥ := IsDiscreteValuationRing.not_a_field (𝒪 L)
+  have hover : Ideal.under (𝒪 K) (maximalIdeal (𝒪 L)) = maximalIdeal (𝒪 K) :=
+    Ideal.LiesOver.over.symm
+  letI := Localization.AtPrime.algebraOfLiesOver
+    (Ideal.under (𝒪 K) (maximalIdeal (𝒪 L))) (maximalIdeal (𝒪 L))
+  haveI hfinL : Finite (𝒪 L ⧸ maximalIdeal (𝒪 L)) := by
+    haveI : Finite (IsLocalRing.ResidueField ℤ_[p]) :=
+      Finite.of_equiv _ (PadicInt.residueField (p := p)).symm.toEquiv
+    exact IsLocalRing.ResidueField.finite_of_finite (R := ℤ_[p]) (S := 𝒪 L) inferInstance
+  haveI : Algebra.IsIntegral (𝒪 K) (𝒪 L) := Algebra.IsIntegral.of_finite _ _
+  haveI : Finite (𝒪 K ⧸ Ideal.under (𝒪 K) (maximalIdeal (𝒪 L))) := by rw [hover]; exact hfin
+  haveI : Finite ((Ideal.under (𝒪 K) (maximalIdeal (𝒪 L))).ResidueField) := inferInstance
+  haveI : Finite ((maximalIdeal (𝒪 L)).ResidueField) := inferInstance
+  haveI : PerfectField ((Ideal.under (𝒪 K) (maximalIdeal (𝒪 L))).ResidueField) := inferInstance
+  haveI : Algebra.IsAlgebraic ((Ideal.under (𝒪 K) (maximalIdeal (𝒪 L))).ResidueField)
+      ((maximalIdeal (𝒪 L)).ResidueField) := inferInstance
+  have hsep : Algebra.IsSeparable ((Ideal.under (𝒪 K) (maximalIdeal (𝒪 L))).ResidueField)
+      ((maximalIdeal (𝒪 L)).ResidueField) := Algebra.IsAlgebraic.isSeparable_of_perfectField
+  rw [Algebra.isUnramifiedAt_iff_map_eq (𝒪 K)
+      (Ideal.under (𝒪 K) (maximalIdeal (𝒪 L))) (maximalIdeal (𝒪 L)),
+    and_iff_right hsep,
+    ← Ideal.IsDedekindDomain.ramificationIdx_eq_one_iff hp Ideal.map_comap_le]
+  show Ideal.ramificationIdx (Ideal.under (𝒪 K) (maximalIdeal (𝒪 L)))
+      (maximalIdeal (𝒪 L)) = 1 ↔ IsUnramified K L
+  rw [hover]
+  exact Iff.rfl
+
+/-- The discriminant exponent equals the residue degree times the different exponent
+(blueprint `prop:disc-eq-f-delta`): `d = f · δ`, since `N_{L/K}(𝔪_L) = 𝔪_K ^ f` and
+the discriminant is the norm of the different (`relNorm_differentIdeal_eq_span_discr`). -/
+theorem discExponent_eq_inertiaDeg_mul_differentExponent :
+    discriminantExponent K L = inertiaDeg K L * differentExponent K L := by
+  haveI : CharZero K := charZero_of_padicAlgebra p K
+  haveI : Algebra.IsSeparable (FractionRing (𝒪 K)) (FractionRing (𝒪 L)) :=
+    separable_fractionRing K L
+  have hd : differentIdeal (𝒪 K) (𝒪 L) ≠ ⊥ := differentIdeal_ne_bot
+  have hdpow : differentIdeal (𝒪 K) (𝒪 L) =
+      (IsLocalRing.maximalIdeal (𝒪 L)) ^ (differentExponent K L) :=
+    eq_maximalIdeal_pow_multiplicity hd
+  have hrelmax : Ideal.relNorm (𝒪 K) (IsLocalRing.maximalIdeal (𝒪 L)) =
+      (IsLocalRing.maximalIdeal (𝒪 K)) ^ (inertiaDeg K L) :=
+    Ideal.relNorm_eq_pow_of_isMaximal _ _
+  have key : Ideal.span {Algebra.discr (𝒪 K) ⇑(Module.Free.chooseBasis (𝒪 K) (𝒪 L))}
+      = (IsLocalRing.maximalIdeal (𝒪 K)) ^ (inertiaDeg K L * differentExponent K L) := by
+    rw [← relNorm_differentIdeal_eq_span_discr K L, hdpow, map_pow, hrelmax, ← pow_mul]
+  show multiplicity (IsLocalRing.maximalIdeal (𝒪 K))
+      (Ideal.span {Algebra.discr (𝒪 K) ⇑(Module.Free.chooseBasis (𝒪 K) (𝒪 L))}) = _
+  rw [key]; exact multiplicity_maximalIdeal_pow _
+
+open IsLocalRing in
 /-- Dedekind's different theorem (blueprint `thm:dedekind-different`): the different
 exponent satisfies `δ ≥ e - 1`, with equality exactly when `L / K` is tamely
-ramified (`p ∤ e`). -/
+ramified (`p ∤ e`).
+
+The lower bound `e - 1 ≤ δ` is proved: `𝔪_L ^ e ∣ 𝔪_K 𝒪_L` (by definition of the
+ramification index), so `Ideal.pow_sub_one_dvd_differentIdeal` gives `𝔪_L ^ (e-1) ∣ 𝔡`,
+whence `e - 1 ≤ v_{𝔪_L}(𝔡) = δ`. The sharp equivalence `δ = e - 1 ↔ p ∤ e` is the
+wild-ramification part of Dedekind's theorem (needs the trace/higher-ramification
+computation showing `𝔪_L ^ e ∤ 𝔡` exactly in the tame case); it is not yet available
+in Mathlib and is left as `sorry`. -/
 theorem differentExponent_tame :
     ramificationIdx K L - 1 ≤ differentExponent K L ∧
       (differentExponent K L = ramificationIdx K L - 1 ↔ IsTamelyRamified K L) := by
-  sorry
+  haveI : CharZero K := charZero_of_padicAlgebra p K
+  haveI : Algebra.IsSeparable (FractionRing (𝒪 K)) (FractionRing (𝒪 L)) :=
+    separable_fractionRing K L
+  refine ⟨?_, ?_⟩
+  · have hmK : maximalIdeal (𝒪 K) ≠ ⊥ := IsDiscreteValuationRing.not_a_field (𝒪 K)
+    have hdvd : (maximalIdeal (𝒪 L)) ^ (ramificationIdx K L) ∣
+        (maximalIdeal (𝒪 K)).map (algebraMap (𝒪 K) (𝒪 L)) :=
+      Ideal.dvd_iff_le.mpr Ideal.le_pow_ramificationIdx
+    have hd : differentIdeal (𝒪 K) (𝒪 L) ≠ ⊥ := differentIdeal_ne_bot
+    have hdvd' : (maximalIdeal (𝒪 L)) ^ (ramificationIdx K L - 1) ∣
+        differentIdeal (𝒪 K) (𝒪 L) :=
+      pow_sub_one_dvd_differentIdeal (P := maximalIdeal (𝒪 L)) (e := ramificationIdx K L)
+        (hp := hmK) (hP := hdvd)
+    have hfin : FiniteMultiplicity (maximalIdeal (𝒪 L)) (differentIdeal (𝒪 K) (𝒪 L)) :=
+      FiniteMultiplicity.of_not_isUnit
+        (Ideal.isUnit_iff.not.mpr (IsLocalRing.maximalIdeal.isMaximal (𝒪 L)).ne_top)
+        (by rw [Ideal.zero_eq_bot]; exact hd)
+    exact hfin.le_multiplicity_of_pow_dvd hdvd'
+  · sorry
 
 /-- The discriminant exponent vanishes exactly when `L / K` is unramified
 (blueprint `thm:disc-zero-iff-unramified`): `d = 0 ↔ e = 1`. -/
 theorem discExponent_eq_zero_iff_unramified :
     discriminantExponent K L = 0 ↔ IsUnramified K L := by
-  sorry
+  haveI : CharZero K := charZero_of_padicAlgebra p K
+  haveI : Algebra.IsSeparable (FractionRing (𝒪 K)) (FractionRing (𝒪 L)) :=
+    separable_fractionRing K L
+  have hd : differentIdeal (𝒪 K) (𝒪 L) ≠ ⊥ := differentIdeal_ne_bot
+  rw [discExponent_eq_inertiaDeg_mul_differentExponent K L, Nat.mul_eq_zero,
+    or_iff_right (inertiaDeg_ne_zero K L)]
+  show multiplicity (IsLocalRing.maximalIdeal (𝒪 L)) (differentIdeal (𝒪 K) (𝒪 L)) = 0 ↔ _
+  rw [multiplicity_eq_zero, not_dvd_differentIdeal_iff]
+  exact isUnramifiedAt_maximalIdeal_iff K L
 
 /-- Tame discriminant exponent (blueprint `cor:tame-disc`): if `L / K` is tamely
-ramified then `d = f · (e - 1)`. -/
+ramified then `d = f · (e - 1)`. Immediate from `d = f · δ`
+(`discExponent_eq_inertiaDeg_mul_differentExponent`) and the tame equality `δ = e - 1`
+(`differentExponent_tame`). -/
 theorem discExponent_tame (h : IsTamelyRamified K L) :
     discriminantExponent K L = inertiaDeg K L * (ramificationIdx K L - 1) := by
-  sorry
+  rw [discExponent_eq_inertiaDeg_mul_differentExponent K L,
+    (differentExponent_tame K L).2.mpr h]
 
 end Extension
 
