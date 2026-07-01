@@ -111,65 +111,6 @@ theorem mono_mapMK_eq_pow
         hπ)
   rw [hspec, mono_maximalIdeal_eq_span hπ, Ideal.span_singleton_pow]
 
-/-- **M1-(c)** Dimension anchor: `dim_κ Q = [𝒪 : 𝒪K]`, where
-`Q := 𝒪 ⧸ Ideal.map (algebraMap 𝒪K 𝒪) 𝔪K` and `κ := 𝒪K ⧸ 𝔪K`.
-
-This is the pure DVR/ramification anchor for the count `[𝒪 : 𝒪K] = e · f`
-(the missing factor `dim_κ Q = e · f` is M2/M3 content).  Proved by the exact
-technique of the keystone helper `thm_10_4_aux_finrank_quot`, specialised to
-the *ring*-quotient picture `Q` (no `restrictScalars`/`smul_top` bridge needed):
-free over the DVR `𝒪K` + Mathlib `IsLocalRing.finrank_quotient_map`. -/
-theorem mono_finrank_quot_eq_finrank
-    {𝒪K : Type*} [CommRing 𝒪K] [IsDomain 𝒪K] [IsLocalRing 𝒪K]
-    [IsDiscreteValuationRing 𝒪K]
-    {𝒪 : Type*} [CommRing 𝒪] [IsDomain 𝒪] [IsLocalRing 𝒪]
-    [IsDiscreteValuationRing 𝒪]
-    [Algebra 𝒪K 𝒪] [Module.Finite 𝒪K 𝒪] [FaithfulSMul 𝒪K 𝒪] :
-    Module.finrank (𝒪K ⧸ IsLocalRing.maximalIdeal 𝒪K)
-      (𝒪 ⧸ (Ideal.map (algebraMap 𝒪K 𝒪)
-        (IsLocalRing.maximalIdeal 𝒪K))) =
-    Module.finrank 𝒪K 𝒪 := by
-  -- `𝒪` is torsion-free over `𝒪K` (algebraMap injective via `FaithfulSMul`),
-  -- finite over the DVR (hence PID) `𝒪K`, so free.
-  have _hTF : Module.IsTorsionFree 𝒪K 𝒪 :=
-    (Module.isTorsionFree_iff_algebraMap_injective (R := 𝒪K) (A := 𝒪)).mpr
-      (FaithfulSMul.algebraMap_injective 𝒪K 𝒪)
-  haveI _hFree : Module.Free 𝒪K 𝒪 :=
-    Module.free_of_finite_type_torsion_free'
-  -- Mathlib closes the ring-quotient shape directly.
-  exact IsLocalRing.finrank_quotient_map (R := 𝒪K) (S := 𝒪)
-
-/-- **M1-(d)** Nilpotency seed: `π^e ∈ 𝔪K · 𝒪`.
-
-Hence `π̄^e = 0` in `Q := 𝒪 ⧸ 𝔪K·𝒪`.  Immediate from `mono_mapMK_eq_pow`
-(`𝔪K·𝒪 = 𝔪^e`) and `mono_maximalIdeal_eq_span` (`𝔪 = (π)`), since
-`π^e ∈ (π)^e = 𝔪^e`. -/
-theorem mono_pi_pow_e_mem_mapMK
-    {𝒪K : Type*} [CommRing 𝒪K] [IsDomain 𝒪K] [IsLocalRing 𝒪K]
-    [IsDiscreteValuationRing 𝒪K]
-    {𝒪 : Type*} [CommRing 𝒪] [IsDomain 𝒪] [IsLocalRing 𝒪]
-    [IsDiscreteValuationRing 𝒪]
-    [Algebra 𝒪K 𝒪] [Module.Finite 𝒪K 𝒪] [FaithfulSMul 𝒪K 𝒪]
-    {π : 𝒪} (hπ : Irreducible π) :
-    π ^ (mono_ramificationIdx 𝒪K 𝒪 hπ) ∈
-      Ideal.map (algebraMap 𝒪K 𝒪) (IsLocalRing.maximalIdeal 𝒪K) := by
-  rw [mono_mapMK_eq_pow hπ, mono_maximalIdeal_eq_span hπ,
-    Ideal.span_singleton_pow, Ideal.mem_span_singleton]
-
-/-- Corollary of **M1-(d)**: in `Q := 𝒪 ⧸ 𝔪K·𝒪` the class of `π` is
-`e`-nilpotent: `(π̄)^e = 0`. -/
-theorem mono_pi_bar_pow_e_eq_zero
-    {𝒪K : Type*} [CommRing 𝒪K] [IsDomain 𝒪K] [IsLocalRing 𝒪K]
-    [IsDiscreteValuationRing 𝒪K]
-    {𝒪 : Type*} [CommRing 𝒪] [IsDomain 𝒪] [IsLocalRing 𝒪]
-    [IsDiscreteValuationRing 𝒪]
-    [Algebra 𝒪K 𝒪] [Module.Finite 𝒪K 𝒪] [FaithfulSMul 𝒪K 𝒪]
-    {π : 𝒪} (hπ : Irreducible π) :
-    (Ideal.Quotient.mk
-        (Ideal.map (algebraMap 𝒪K 𝒪) (IsLocalRing.maximalIdeal 𝒪K)) π)
-      ^ (mono_ramificationIdx 𝒪K 𝒪 hπ) = 0 := by
-  rw [← map_pow, Ideal.Quotient.eq_zero_iff_mem]
-  exact mono_pi_pow_e_mem_mapMK hπ
 
 /-! ## M2 — the graded-piece isomorphism `λ ≃ₗ[κ] 𝔪^k/𝔪^{k+1}` and its dimension
 
@@ -380,21 +321,6 @@ the class of `π^k · x` in `gr_k`.  This is what lets M3 compute
   apply Subtype.ext
   rfl
 
-omit [IsDomain 𝒪K] [IsDiscreteValuationRing 𝒪K] [Module.Finite 𝒪K 𝒪]
-  [FaithfulSMul 𝒪K 𝒪] in
-/-- **M2-(3)** Dimension of the graded piece:
-`dim_κ (𝔪^k/𝔪^{k+1}) = dim_κ λ` for every `k : ℕ`
-(equal to the inertia degree `f := [λ : κ]`).  Immediate from the
-`κ`-linear equivalence `mono_gradedPiece_equiv`. -/
-theorem mono_finrank_gradedPiece
-    {π : 𝒪} (hπ : Irreducible π) (k : ℕ) :
-    letI := mono_gradedPiece_kappaModule (𝒪K := 𝒪K) hπ k
-    Module.finrank (IsLocalRing.ResidueField 𝒪K)
-        (mono_gradedPiece π k) =
-      Module.finrank (IsLocalRing.ResidueField 𝒪K)
-        (IsLocalRing.ResidueField 𝒪) := by
-  letI := mono_gradedPiece_kappaModule (𝒪K := 𝒪K) hπ k
-  exact ((mono_gradedPiece_equiv (𝒪K := 𝒪K) hπ k).finrank_eq).symm
 
 /-! ## M3 — a `κ`-basis `{ξ^j π^k : j < f}` of every graded piece `gr_k`
 
@@ -510,52 +436,6 @@ noncomputable def mono_lambda_basis
       (IsLocalRing.residue 𝒪 ξ) ^ (j : ℕ) := by
   rw [mono_lambda_basis, Module.Basis.reindex_apply,
     mono_lambda_powerBasis_basis_apply, finCongr_symm_apply_coe]
-
-/-- **M3-(3)** The headline `κ`-basis of the graded piece
-`gr_k = 𝔪^k/𝔪^{k+1}`, indexed by `Fin (finrank κ λ)`, obtained by transporting
-`mono_lambda_basis` through the `κ`-linear equivalence
-`mono_gradedPiece_equiv hπ k : λ ≃ₗ[κ] gr_k`.  Its `j`-th vector is the class
-of `ξ^j·π^k` in `𝒪 ⧸ (π)^{k+1}` (see `mono_gradedPiece_basis_apply`).  Stated
-for arbitrary `k : ℕ` (no `k < e`). -/
-noncomputable def mono_gradedPiece_basis
-    {π : 𝒪} (hπ : Irreducible π) (k : ℕ)
-    (hξ_prim : IntermediateField.adjoin (IsLocalRing.ResidueField 𝒪K)
-       ({IsLocalRing.residue 𝒪 ξ} : Set (IsLocalRing.ResidueField 𝒪)) = ⊤) :
-    letI := mono_gradedPiece_kappaModule (𝒪K := 𝒪K) hπ k
-    Module.Basis
-      (Fin (Module.finrank (IsLocalRing.ResidueField 𝒪K)
-        (IsLocalRing.ResidueField 𝒪)))
-      (IsLocalRing.ResidueField 𝒪K) (mono_gradedPiece π k) :=
-  letI := mono_gradedPiece_kappaModule (𝒪K := 𝒪K) hπ k
-  (mono_lambda_basis (ξ := ξ) hξ_prim).map
-    (mono_gradedPiece_equiv (𝒪K := 𝒪K) hπ k)
-
-/-- **M3-(3)-apply** Explicit value of the graded-piece basis: the `j`-th
-vector of `mono_gradedPiece_basis` is the class of `ξ^j·π^k` in
-`𝒪 ⧸ (π)^{k+1}`.  This explicit monomial formula is what M4 glues over
-`k = 0, …, e-1`. -/
-@[simp] theorem mono_gradedPiece_basis_apply
-    {π : 𝒪} (hπ : Irreducible π) (k : ℕ)
-    (hξ_prim : IntermediateField.adjoin (IsLocalRing.ResidueField 𝒪K)
-       ({IsLocalRing.residue 𝒪 ξ} : Set (IsLocalRing.ResidueField 𝒪)) = ⊤)
-    (j : Fin (Module.finrank (IsLocalRing.ResidueField 𝒪K)
-        (IsLocalRing.ResidueField 𝒪))) :
-    letI := mono_gradedPiece_kappaModule (𝒪K := 𝒪K) hπ k
-    (mono_gradedPiece_basis (ξ := ξ) hπ k hξ_prim j :
-        mono_gradedPiece π k) =
-      ⟨Ideal.Quotient.mk (Ideal.span {π} ^ (k + 1) : Ideal 𝒪)
-          (ξ ^ (j : ℕ) * π ^ k),
-        ⟨ξ ^ (j : ℕ), by rw [mono_gr_lmap_apply, mul_comm]⟩⟩ := by
-  letI := mono_gradedPiece_kappaModule (𝒪K := 𝒪K) hπ k
-  rw [mono_gradedPiece_basis, Module.Basis.map_apply, mono_lambda_basis_apply]
-  rw [show (IsLocalRing.residue 𝒪 ξ) ^ (j : ℕ)
-        = Ideal.Quotient.mk (IsLocalRing.maximalIdeal 𝒪) (ξ ^ (j : ℕ)) by
-      rw [map_pow]; rfl]
-  rw [mono_gradedPiece_equiv_apply (𝒪K := 𝒪K) hπ k (ξ ^ (j : ℕ))]
-  apply Subtype.ext
-  show Ideal.Quotient.mk (Ideal.span {π} ^ (k + 1) : Ideal 𝒪) (π ^ k * ξ ^ (j : ℕ))
-      = Ideal.Quotient.mk (Ideal.span {π} ^ (k + 1) : Ideal 𝒪) (ξ ^ (j : ℕ) * π ^ k)
-  rw [mul_comm (π ^ k) (ξ ^ (j : ℕ))]
 
 end M3
 
@@ -755,22 +635,6 @@ noncomputable def mono_filtProj
       rw [mono_quot_kappa_smul hπ (n + 1) hn1 c y,
         mono_quot_kappa_smul hπ n hn c (Submodule.factor hLE y)]
       exact (Submodule.factor hLE).map_smul_of_tower c y }
-
-/-- `mono_filtProj` is surjective. -/
-theorem mono_filtProj_surjective
-    {π : 𝒪} (hπ : Irreducible π) (n : ℕ)
-    (hn1 : Ideal.map (algebraMap 𝒪K 𝒪) (IsLocalRing.maximalIdeal 𝒪K)
-      ≤ (Ideal.span {π} ^ (n + 1) : Ideal 𝒪))
-    (hn : Ideal.map (algebraMap 𝒪K 𝒪) (IsLocalRing.maximalIdeal 𝒪K)
-      ≤ (Ideal.span {π} ^ n : Ideal 𝒪)) :
-    letI := mono_quot_kappaModule hπ (n + 1) hn1
-    letI := mono_quot_kappaModule hπ n hn
-    Function.Surjective (mono_filtProj (𝒪K := 𝒪K) hπ n hn1 hn) := by
-  letI := mono_quot_kappaModule hπ (n + 1) hn1
-  letI := mono_quot_kappaModule hπ n hn
-  intro z
-  obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective z
-  exact ⟨Ideal.Quotient.mk _ x, rfl⟩
 
 /-- The kernel of `mono_filtProj` is exactly the range of `mono_botMap`
 (both equal `gr_n` = image of `I^n` in `M (n+1)`). -/
@@ -1175,60 +1039,6 @@ theorem mono_basis_Q
     fun jk => by rw [Module.Basis.mk_apply hLIQ hspanQ jk, hvQ]⟩
 
 end M4
-
-/-! ## The generic target theorem (M2–M5 will replace the `sorry` body)
-
-This is the *only* `sorry` permitted in this file after M1.  Its typeclass
-setup is **identical** to the keystone `thm_10_4_aux_iterate_h_lift_coeff_mem`
-(so M5 can wire it in directly):
-
-  `[CommRing 𝒪K] [IsDomain 𝒪K] [IsLocalRing 𝒪K] [IsDiscreteValuationRing 𝒪K]`
-  `[CommRing 𝒪] [IsDomain 𝒪] [IsLocalRing 𝒪] [IsDiscreteValuationRing 𝒪]`
-  `[Algebra 𝒪K 𝒪] [IsLocalHom (algebraMap 𝒪K 𝒪)] [Module.Finite 𝒪K 𝒪]`
-  `[FaithfulSMul 𝒪K 𝒪]`, separability of the residue extension, plus the two
-  genuine data inputs `hξ_prim` (ξ̄ primitive) and `hπ` (π irreducible).
-
-Conclusion: the family `fun (jk : Fin f × Fin e) => mkQ (ξ^jk.1 * π^jk.2)`
-is a `κ`-basis of `Q`, exhibited as a `Module.Basis` whose values are exactly
-those monomial classes. -/
-
-set_option linter.unusedVariables false in
-/-- **Neukirch II.10.4 structure theorem (generic target).**
-
-With `κ := ResidueField 𝒪K`, `Q := 𝒪 ⧸ 𝔪K·𝒪`, `f := [ResidueField 𝒪 :
-ResidueField 𝒪K]`, `e := mono_ramificationIdx`, `ξ` a lift of a primitive
-element `ξ̄ := residue 𝒪 ξ` of `λ/κ`, and `π` a uniformizer of `𝒪`: the family
-`{ξ^j · π^k mod 𝔪K·𝒪 : j < f, k < e}` is a `κ`-basis of `Q`.
-
-Body is `sorry` — filled by milestones M2–M5.  This is the single permitted
-`sorry`; every M1 foundation lemma above is proved sorry-free. -/
-theorem thm_10_4_monogenicity_basis
-    {𝒪K : Type*} [CommRing 𝒪K] [IsDomain 𝒪K] [IsLocalRing 𝒪K]
-    [IsDiscreteValuationRing 𝒪K]
-    {𝒪 : Type*} [CommRing 𝒪] [IsDomain 𝒪] [IsLocalRing 𝒪]
-    [IsDiscreteValuationRing 𝒪]
-    [Algebra 𝒪K 𝒪]
-    [IsLocalHom (algebraMap 𝒪K 𝒪)]
-    [Module.Finite 𝒪K 𝒪]
-    [FaithfulSMul 𝒪K 𝒪]
-    (_hSep : Algebra.IsSeparable
-       (IsLocalRing.ResidueField 𝒪K) (IsLocalRing.ResidueField 𝒪))
-    (ξ π : 𝒪)
-    (hξ_prim : IntermediateField.adjoin (IsLocalRing.ResidueField 𝒪K)
-       ({IsLocalRing.residue 𝒪 ξ} : Set (IsLocalRing.ResidueField 𝒪)) = ⊤)
-    (hπ : Irreducible π) :
-    ∃ B : Module.Basis
-        (Fin (Module.finrank (IsLocalRing.ResidueField 𝒪K)
-              (IsLocalRing.ResidueField 𝒪)) ×
-          Fin (mono_ramificationIdx 𝒪K 𝒪 hπ))
-        (𝒪K ⧸ IsLocalRing.maximalIdeal 𝒪K)
-        (𝒪 ⧸ (Ideal.map (algebraMap 𝒪K 𝒪)
-          (IsLocalRing.maximalIdeal 𝒪K))),
-      ∀ jk, B jk =
-        Ideal.Quotient.mk
-          (Ideal.map (algebraMap 𝒪K 𝒪) (IsLocalRing.maximalIdeal 𝒪K))
-          (ξ ^ (jk.1 : ℕ) * π ^ (jk.2 : ℕ)) := by
-  exact mono_basis_Q (𝒪K := 𝒪K) (ξ := ξ) hπ hξ_prim
 
 /-! ## M6 — the two-generator monogenicity corollary `𝒪 = 𝒪K[ξ, π]`
 
