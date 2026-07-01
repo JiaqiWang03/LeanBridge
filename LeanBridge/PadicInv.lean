@@ -22,13 +22,15 @@ ideal of `𝒪_K`; no dedicated wrapper is introduced here.
 
 noncomputable section
 
-/-- A *`p`-adic field* is a finite extension `K / ℚ_[p]`. -/
-class PadicField (p : ℕ) [Fact p.Prime] (K : Type*) [Field K] [Algebra ℚ_[p] K] : Prop
+/-- A *`p`-adic field* is a finite extension `K / ℚ_[p]`. The prime `p` is an
+`outParam`: it is recovered from the field `K` (via its `ℚ_[p]`-algebra
+structure), so downstream definitions such as `𝒪 K` need not carry `p`. -/
+class PadicField (K : Type*) [Field K] (p : outParam ℕ) [Fact p.Prime] [Algebra ℚ_[p] K] : Prop
     extends Module.Finite ℚ_[p] K
 
 namespace PadicField
 
-variable (p : ℕ) [Fact p.Prime] (K : Type*) [Field K] [Algebra ℚ_[p] K] [PadicField p K]
+variable (K : Type*) [Field K] {p : ℕ} [Fact p.Prime] [Algebra ℚ_[p] K] [PadicField K p]
 
 /-- The canonical `ℤ_[p]`-algebra structure on a `p`-adic field, obtained by
 restricting scalars along `ℤ_[p] → ℚ_[p]`. -/
@@ -38,12 +40,12 @@ instance instAlgebraPadicInt : Algebra ℤ_[p] K :=
 instance instIsScalarTower : IsScalarTower ℤ_[p] ℚ_[p] K :=
   IsScalarTower.of_algebraMap_eq fun _ => rfl
 
-omit [PadicField p K] in
-theorem algebraMap_padicInt_injective : Function.Injective (algebraMap ℤ_[p] K) := by
+theorem algebraMap_padicInt_injective (p : ℕ) [Fact p.Prime] (K : Type*) [Field K]
+    [Algebra ℚ_[p] K] : Function.Injective (algebraMap ℤ_[p] K) := by
   rw [IsScalarTower.algebraMap_eq ℤ_[p] ℚ_[p] K, RingHom.coe_comp]
   exact (algebraMap ℚ_[p] K).injective.comp (IsFractionRing.injective ℤ_[p] ℚ_[p])
 
-omit [PadicField p K] in
+omit [PadicField K p] in
 theorem charZero_of_padicAlgebra (p : ℕ) [Fact p.Prime] (K : Type*) [Field K]
     [Algebra ℚ_[p] K] : CharZero K :=
   charZero_of_injective_algebraMap (algebraMap ℚ_[p] K).injective
@@ -58,26 +60,28 @@ instance instIsSeparable : Algebra.IsSeparable ℚ_[p] K := by
 instance instIsTorsionFreePadicInt : Module.IsTorsionFree ℤ_[p] K :=
   Module.isTorsionFree_iff_algebraMap_injective.mpr (algebraMap_padicInt_injective p K)
 
-/-- The ring of integers `𝒪_K` of a `p`-adic field `K`: the integral closure of
-`ℤ_[p]` (the integers of `ℚ_[p]`) in `K`. -/
-def ringOfIntegers : Subalgebra ℤ_[p] K := integralClosure ℤ_[p] K
+/-- The ring of integers `𝒪 K` of a `p`-adic field `K`: the integral closure of
+`ℤ_[p]` (the integers of `ℚ_[p]`) in `K`. The prime `p` is recovered from the
+`PadicField` instance, so it is not an explicit argument. -/
+def ringOfIntegers (K : Type*) [Field K] {p : ℕ} [Fact p.Prime] [Algebra ℚ_[p] K]
+    [PadicField K p] : Subalgebra ℤ_[p] K := integralClosure ℤ_[p] K
 
-@[inherit_doc] scoped notation "𝒪[" K "]" => PadicField.ringOfIntegers _ K
+@[inherit_doc] scoped notation "𝒪" => PadicField.ringOfIntegers
 
-instance instIsIntegralClosure : IsIntegralClosure (ringOfIntegers p K) ℤ_[p] K :=
+instance instIsIntegralClosure : IsIntegralClosure (𝒪 K) ℤ_[p] K :=
   integralClosure.isIntegralClosure ℤ_[p] K
 
-instance : IsFractionRing (ringOfIntegers p K) K :=
+instance : IsFractionRing (𝒪 K) K :=
   integralClosure.isFractionRing_of_finite_extension ℚ_[p] K
 
-instance instAlgebraIsIntegralRingOfIntegers : Algebra.IsIntegral ℤ_[p] (ringOfIntegers p K) :=
+instance instAlgebraIsIntegralRingOfIntegers : Algebra.IsIntegral ℤ_[p] (𝒪 K) :=
   inferInstanceAs (Algebra.IsIntegral ℤ_[p] (integralClosure ℤ_[p] K))
 
-instance instFiniteRingOfIntegers : Module.Finite ℤ_[p] (ringOfIntegers p K) :=
-  IsIntegralClosure.finite ℤ_[p] ℚ_[p] K (ringOfIntegers p K)
+instance instFiniteRingOfIntegers : Module.Finite ℤ_[p] (𝒪 K) :=
+  IsIntegralClosure.finite ℤ_[p] ℚ_[p] K (𝒪 K)
 
-instance instFreeRingOfIntegers : Module.Free ℤ_[p] (ringOfIntegers p K) :=
-  IsIntegralClosure.module_free ℤ_[p] ℚ_[p] K (ringOfIntegers p K)
+instance instFreeRingOfIntegers : Module.Free ℤ_[p] (𝒪 K) :=
+  IsIntegralClosure.module_free ℤ_[p] ℚ_[p] K (𝒪 K)
 
 /-! ### Proof that `𝒪_K` is a discrete valuation ring (`prop:padic-is-dvf`)
 
@@ -135,8 +139,8 @@ instance instValuationRing : ValuationRing (integralClosure ℤ_[p] K) := by
 instance isDedekind : IsDedekindDomain (integralClosure ℤ_[p] K) :=
     IsIntegralClosure.isDedekindDomain ℤ_[p] ℚ_[p] K (integralClosure ℤ_[p] K)
 
-omit [PadicField p K] in
-theorem notField : ¬ IsField (integralClosure ℤ_[p] K) := by
+theorem notField (p : ℕ) [Fact p.Prime] (K : Type*) [Field K] [Algebra ℚ_[p] K] :
+    ¬ IsField (integralClosure ℤ_[p] K) := by
   have hinj : Function.Injective (algebraMap ℤ_[p] (integralClosure ℤ_[p] K)) := by
     have hK := algebraMap_padicInt_injective p K
     rw [IsScalarTower.algebraMap_eq ℤ_[p] (integralClosure ℤ_[p] K) K, RingHom.coe_comp] at hK
@@ -149,7 +153,7 @@ theorem notField : ¬ IsField (integralClosure ℤ_[p] K) := by
 (blueprint `prop:padic-is-dvf`): `𝒪_K` is a valuation ring (`instValuationRing`, hence local),
 a Dedekind domain and not a field, so the DVR characterization applies. -/
 instance instIsDiscreteValuationRing :
-    IsDiscreteValuationRing (ringOfIntegers p K) := by
+    IsDiscreteValuationRing (𝒪 K) := by
   have hD : IsDedekindDomain (integralClosure ℤ_[p] K) := inferInstance
   exact ((IsDiscreteValuationRing.TFAE (integralClosure ℤ_[p] K) (notField p K)).out 2 0).mp hD
 
@@ -212,8 +216,8 @@ private lemma isAdicComplete_of_pow
 `prop:padic-is-dvf`): the integral closure of the complete DVR `ℤ_[p]` in a
 finite extension is again complete. -/
 instance instIsAdicComplete :
-    IsAdicComplete (IsLocalRing.maximalIdeal (ringOfIntegers p K)) (ringOfIntegers p K) := by
-  let S := ringOfIntegers p K
+    IsAdicComplete (IsLocalRing.maximalIdeal (𝒪 K)) (𝒪 K) := by
+  let S := 𝒪 K
   have hZp : IsAdicComplete (IsLocalRing.maximalIdeal ℤ_[p]) S := by
     haveI : IsHausdorff (IsLocalRing.maximalIdeal ℤ_[p]) S := inferInstance
     exact isAdicComplete_of_finite_of_adicComplete
@@ -258,7 +262,7 @@ instance instIsAdicComplete :
 
 namespace Extension
 
-variable (L : Type*) [Field L] [Algebra ℚ_[p] L] [PadicField p L]
+variable (L : Type*) [Field L] [Algebra ℚ_[p] L] [PadicField L p]
   [Algebra K L] [Module.Finite K L] [IsScalarTower ℚ_[p] K L]
 
 /-- `ℤ_[p]` acts on `L` through `K`, compatibly with its action through `ℚ_[p]`. -/
@@ -270,7 +274,7 @@ instance instIsScalarTowerPadicInt : IsScalarTower ℤ_[p] K L :=
 
 /-- The inclusion `𝒪_K → 𝒪_L` of rings of integers induced by `K → L`: an
 element integral over `ℤ_[p]` stays integral after embedding into `L`. -/
-def ringOfIntegersMap : ringOfIntegers p K →+* ringOfIntegers p L where
+def ringOfIntegersMap : 𝒪 K →+* 𝒪 L where
   toFun x := ⟨algebraMap K L (x : K), by
     have hx : IsIntegral ℤ_[p] (x : K) := x.2
     have h2 := hx.map (IsScalarTower.toAlgHom ℤ_[p] K L)
@@ -282,28 +286,28 @@ def ringOfIntegersMap : ringOfIntegers p K →+* ringOfIntegers p L where
 
 /-- The `ℤ_[p]`-algebra structure on the pair `𝒪_K → 𝒪_L`, used to form the
 relative ramification index. -/
-instance instAlgebraRingOfIntegers : Algebra (ringOfIntegers p K) (ringOfIntegers p L) :=
-  (ringOfIntegersMap p K L).toAlgebra
+instance instAlgebraRingOfIntegers : Algebra (𝒪 K) (𝒪 L) :=
+  (ringOfIntegersMap K L).toAlgebra
 
 /-- The *ramification index* `e(L / K)` of an extension of `p`-adic fields
 (blueprint `def:ramification-index`): the ramification index of the maximal
 ideal `𝔪_K` of `𝒪_K` in `𝒪_L`. Equivalently `v_L(π_K) = e`, `𝔪_K 𝒪_L = 𝔪_L ^ e`. -/
 def ramificationIdx : ℕ :=
-  Ideal.ramificationIdx (R := ringOfIntegers p K) (S := ringOfIntegers p L)
-    (IsLocalRing.maximalIdeal (ringOfIntegers p K))
-    (IsLocalRing.maximalIdeal (ringOfIntegers p L))
+  Ideal.ramificationIdx (R := 𝒪 K) (S := 𝒪 L)
+    (IsLocalRing.maximalIdeal (𝒪 K))
+    (IsLocalRing.maximalIdeal (𝒪 L))
 
 /-- `L / K` is *unramified* when `e = 1` (blueprint `def:tame-wild`). -/
-def IsUnramified : Prop := ramificationIdx p K L = 1
+def IsUnramified : Prop := ramificationIdx K L = 1
 
 /-- `L / K` is *ramified* when `e > 1` (blueprint `def:tame-wild`). -/
-def IsRamified : Prop := 1 < ramificationIdx p K L
+def IsRamified : Prop := 1 < ramificationIdx K L
 
 /-- `L / K` is *tamely ramified* when `p ∤ e` (blueprint `def:tame-wild`). -/
-def IsTamelyRamified : Prop := ¬ (p : ℕ) ∣ ramificationIdx p K L
+def IsTamelyRamified : Prop := ¬ (p : ℕ) ∣ ramificationIdx K L
 
 /-- `L / K` is *wildly ramified* when `p ∣ e` (blueprint `def:tame-wild`). -/
-def IsWildlyRamified : Prop := (p : ℕ) ∣ ramificationIdx p K L
+def IsWildlyRamified : Prop := (p : ℕ) ∣ ramificationIdx K L
 
 /-!
 ### The residue degree and the identity `e * f = [L : K]` (blueprint §1.4)
@@ -312,22 +316,22 @@ def IsWildlyRamified : Prop := (p : ℕ) ∣ ramificationIdx p K L
 -- Shared structural instances for `L / K`, used by both results below.
 
 /-- `ℤ_[p]` acts on `L` through `𝒪_K`. -/
-instance : IsScalarTower ℤ_[p] (ringOfIntegers p K) L :=
+instance : IsScalarTower ℤ_[p] (𝒪 K) L :=
   IsScalarTower.of_algebraMap_eq fun x => by
-    rw [IsScalarTower.algebraMap_apply (ringOfIntegers p K) K L,
-        ← IsScalarTower.algebraMap_apply ℤ_[p] (ringOfIntegers p K) K]
+    rw [IsScalarTower.algebraMap_apply (𝒪 K) K L,
+        ← IsScalarTower.algebraMap_apply ℤ_[p] (𝒪 K) K]
     exact IsScalarTower.algebraMap_apply ℤ_[p] K L x
 
 /-- `𝒪_K` acts on `L` through `𝒪_L`. -/
-instance : IsScalarTower (ringOfIntegers p K) (ringOfIntegers p L) L :=
+instance : IsScalarTower (𝒪 K) (𝒪 L) L :=
   IsScalarTower.of_algebraMap_eq fun _ => rfl
 
-instance : Algebra.IsIntegral ℤ_[p] (ringOfIntegers p K) :=
+instance : Algebra.IsIntegral ℤ_[p] (𝒪 K) :=
   inferInstanceAs (Algebra.IsIntegral ℤ_[p] (integralClosure ℤ_[p] K))
 
 /-- `𝒪_L` is the integral closure of `𝒪_K` in `L`: an element of `L` is integral
 over `𝒪_K` iff it is integral over `ℤ_[p]`. -/
-instance : IsIntegralClosure (ringOfIntegers p L) (ringOfIntegers p K) L := by
+instance : IsIntegralClosure (𝒪 L) (𝒪 K) L := by
   constructor
   · exact Subtype.coe_injective
   · intro x
@@ -346,19 +350,18 @@ theorem isSeparable_of_padicExtension (p : ℕ) [Fact p.Prime]
 
 /-- `K` has characteristic zero (it contains `ℚ_[p]`), hence `L / K` is separable.
 Phrased over `𝒪_K` so that `p` is fixed by the statement. -/
-instance : Module.Finite (ringOfIntegers p K) (ringOfIntegers p L) := by
+instance : Module.Finite (𝒪 K) (𝒪 L) := by
   haveI : Algebra.IsSeparable K L := isSeparable_of_padicExtension p K L
-  exact IsIntegralClosure.finite (ringOfIntegers p K) K L (ringOfIntegers p L)
+  exact IsIntegralClosure.finite (𝒪 K) K L (𝒪 L)
 
-instance : FaithfulSMul (ringOfIntegers p K) (ringOfIntegers p L) :=
-  (faithfulSMul_iff_algebraMap_injective (ringOfIntegers p K) (ringOfIntegers p L)).2
+instance : FaithfulSMul (𝒪 K) (𝒪 L) :=
+  (faithfulSMul_iff_algebraMap_injective (𝒪 K) (𝒪 L)).2
     fun _ _ hab => Subtype.ext ((algebraMap K L).injective (Subtype.ext_iff.1 hab))
 
-instance : Module.IsTorsionFree (ringOfIntegers p K) L :=
-  .trans_faithfulSMul (ringOfIntegers p K) (ringOfIntegers p L) L
+instance : Module.IsTorsionFree (𝒪 K) L :=
+  .trans_faithfulSMul (𝒪 K) (𝒪 L) L
 
-omit [PadicField p L] in
-/-- `𝒪_L` is a finite free `𝒪_K`-module of rank `[L : K]`
+/-- `𝒪 L` is a finite free `𝒪 K`-module of rank `[L : K]`
 (blueprint `lem:OL-free`, Tian Lemma 9.1.1).
 
 The blueprint argument lifts a `k_K`-basis of `𝒪_L / π_K 𝒪_L` and uses
@@ -366,19 +369,19 @@ The blueprint argument lifts a `k_K`-basis of `𝒪_L / π_K 𝒪_L` and uses
 generated modules over the PID `𝒪_K` (the same theorem), via `𝒪_L` being the
 integral closure of `𝒪_K` in `L`. -/
 theorem free_finrank :
-    Module.Free (ringOfIntegers p K) (ringOfIntegers p L) ∧
-      Module.finrank (ringOfIntegers p K) (ringOfIntegers p L) = Module.finrank K L := by
+    Module.Free (𝒪 K) (𝒪 L) ∧
+      Module.finrank (𝒪 K) (𝒪 L) = Module.finrank K L := by
   haveI : Algebra.IsSeparable K L := isSeparable_of_padicExtension p K L
-  exact ⟨IsIntegralClosure.module_free (ringOfIntegers p K) K L (ringOfIntegers p L),
-         IsIntegralClosure.rank (ringOfIntegers p K) K L (ringOfIntegers p L)⟩
+  exact ⟨IsIntegralClosure.module_free (𝒪 K) K L (𝒪 L),
+         IsIntegralClosure.rank (𝒪 K) K L (𝒪 L)⟩
 
 /-- The *residue degree* `f(L / K)` of an extension of `p`-adic fields
 (blueprint `def:residue-degree`): `f = [k_L : k_K]`, realised as the inertia
 degree of `𝔪_K` in `𝒪_L`. -/
 def inertiaDeg : ℕ :=
-  Ideal.inertiaDeg (R := ringOfIntegers p K) (S := ringOfIntegers p L)
-    (IsLocalRing.maximalIdeal (ringOfIntegers p K))
-    (IsLocalRing.maximalIdeal (ringOfIntegers p L))
+  Ideal.inertiaDeg (R := 𝒪 K) (S := 𝒪 L)
+    (IsLocalRing.maximalIdeal (𝒪 K))
+    (IsLocalRing.maximalIdeal (𝒪 L))
 
 /-- The fundamental identity `e * f = [L : K]`
 (blueprint `prop:ef-eq-degree`, Tian Prop. 9.1.4).
@@ -387,14 +390,14 @@ This is `Ideal.ramificationIdx_mul_inertiaDeg_of_isLocalRing`, the local (DVR)
 case of `Ideal.sum_ramification_inertia`, specialised to the rings of integers
 of the `p`-adic fields `K ⊆ L`. -/
 theorem ramificationIdx_mul_inertiaDeg :
-    ramificationIdx p K L * inertiaDeg p K L = Module.finrank K L := by
+    ramificationIdx K L * inertiaDeg K L = Module.finrank K L := by
   haveI : CharZero K := charZero_of_injective_algebraMap (algebraMap ℚ_[p] K).injective
-  have hp0 : IsLocalRing.maximalIdeal (ringOfIntegers p K) ≠ ⊥ := fun h =>
-    IsDiscreteValuationRing.not_isField (ringOfIntegers p K)
+  have hp0 : IsLocalRing.maximalIdeal (𝒪 K) ≠ ⊥ := fun h =>
+    IsDiscreteValuationRing.not_isField (𝒪 K)
       ((IsLocalRing.isField_iff_maximalIdeal_eq).2 h)
   simpa only [ramificationIdx, inertiaDeg] using
     Ideal.ramificationIdx_mul_inertiaDeg_of_isLocalRing
-      (R := ringOfIntegers p K) (S := ringOfIntegers p L) (K := K) (L := L) hp0
+      (R := 𝒪 K) (S := 𝒪 L) (K := K) (L := L) hp0
 
 /-!
 ### The discriminant exponent and its characterisations (blueprint §1.5, §1.6)
@@ -402,50 +405,50 @@ theorem ramificationIdx_mul_inertiaDeg :
 
 /-- `𝒪_L` is a free `𝒪_K`-module (blueprint `lem:OL-free`), so it carries a chosen
 basis used to define the discriminant. -/
-instance instModuleFree : Module.Free (ringOfIntegers p K) (ringOfIntegers p L) :=
-  (free_finrank p K L).1
+instance instModuleFree : Module.Free (𝒪 K) (𝒪 L) :=
+  (free_finrank K L).1
 
 /-- The *different exponent* `δ(L / K)` (blueprint `def:different-exponent`): the
 exponent of `𝔪_L` in the different ideal `𝔡_{L/K} = differentIdeal 𝒪_K 𝒪_L`, i.e.
 the integer `δ` with `𝔡_{L/K} = 𝔪_L ^ δ`. -/
 def differentExponent : ℕ :=
-  multiplicity (IsLocalRing.maximalIdeal (ringOfIntegers p L))
-    (differentIdeal (ringOfIntegers p K) (ringOfIntegers p L))
+  multiplicity (IsLocalRing.maximalIdeal (𝒪 L))
+    (differentIdeal (𝒪 K) (𝒪 L))
 
 /-- The *discriminant exponent* `d(L / K) = v_K(disc(L/K))`
 (blueprint `def:disc-exponent`): the exponent of `𝔪_K` in the ideal generated by
 the discriminant of an `𝒪_K`-basis of `𝒪_L`. The valuation of the discriminant is
 independent of the chosen basis (the determinant changes by a unit square). -/
 def discriminantExponent : ℕ :=
-  multiplicity (IsLocalRing.maximalIdeal (ringOfIntegers p K))
-    (Ideal.span {Algebra.discr (ringOfIntegers p K)
-      ⇑(Module.Free.chooseBasis (ringOfIntegers p K) (ringOfIntegers p L))})
+  multiplicity (IsLocalRing.maximalIdeal (𝒪 K))
+    (Ideal.span {Algebra.discr (𝒪 K)
+      ⇑(Module.Free.chooseBasis (𝒪 K) (𝒪 L))})
 
 /-- The discriminant exponent equals the residue degree times the different exponent
 (blueprint `prop:disc-eq-f-delta`): `d = f · δ`, since `N_{L/K}(𝔪_L) = 𝔪_K ^ f` and
 the discriminant is the norm of the different. -/
 theorem discExponent_eq_inertiaDeg_mul_differentExponent :
-    discriminantExponent p K L = inertiaDeg p K L * differentExponent p K L := by
+    discriminantExponent K L = inertiaDeg K L * differentExponent K L := by
   sorry
 
 /-- Dedekind's different theorem (blueprint `thm:dedekind-different`): the different
 exponent satisfies `δ ≥ e - 1`, with equality exactly when `L / K` is tamely
 ramified (`p ∤ e`). -/
 theorem differentExponent_tame :
-    ramificationIdx p K L - 1 ≤ differentExponent p K L ∧
-      (differentExponent p K L = ramificationIdx p K L - 1 ↔ IsTamelyRamified p K L) := by
+    ramificationIdx K L - 1 ≤ differentExponent K L ∧
+      (differentExponent K L = ramificationIdx K L - 1 ↔ IsTamelyRamified K L) := by
   sorry
 
 /-- The discriminant exponent vanishes exactly when `L / K` is unramified
 (blueprint `thm:disc-zero-iff-unramified`): `d = 0 ↔ e = 1`. -/
 theorem discExponent_eq_zero_iff_unramified :
-    discriminantExponent p K L = 0 ↔ IsUnramified p K L := by
+    discriminantExponent K L = 0 ↔ IsUnramified K L := by
   sorry
 
 /-- Tame discriminant exponent (blueprint `cor:tame-disc`): if `L / K` is tamely
 ramified then `d = f · (e - 1)`. -/
-theorem discExponent_tame (h : IsTamelyRamified p K L) :
-    discriminantExponent p K L = inertiaDeg p K L * (ramificationIdx p K L - 1) := by
+theorem discExponent_tame (h : IsTamelyRamified K L) :
+    discriminantExponent K L = inertiaDeg K L * (ramificationIdx K L - 1) := by
   sorry
 
 end Extension
