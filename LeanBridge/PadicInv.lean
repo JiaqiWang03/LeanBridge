@@ -1,5 +1,7 @@
 import Mathlib
 import LeanBridge.Mono
+import LeanBridge.DiscrAssoc
+import LeanBridge.DiscrNormPB
 
 /-!
 # Invariants of `p`-adic fields: the field and its ring of integers
@@ -475,17 +477,101 @@ theorem inertiaDeg_ne_zero : inertiaDeg K L ≠ 0 :=
   (Ideal.inertiaDeg_pos (IsLocalRing.maximalIdeal (𝒪 K))
     (IsLocalRing.maximalIdeal (𝒪 L))).ne'
 
+set_option maxHeartbeats 800000 in
 /-- **Bridge lemma (A), blueprint `prop:disc-eq-f-delta` core.** The relative
 "discriminant equals the norm of the different": `N_{L/K}(𝔡_{L/K}) = (disc(L/K))`
-as ideals of `𝒪_K`. Mathlib only has the absolute (number-field, base `ℤ`) version
-`NumberField.absNorm_differentIdeal`; the relative statement over a general DVR base
-is not yet available, and proving it needs either monogenicity `𝒪_L = 𝒪_K[x]` (not in
-Mathlib for local extensions) or the trace-dual/determinant index argument ported to
-the relative setting. Left as `sorry`. -/
+as ideals of `𝒪_K`.
+
+Proof: monogenicity `𝒪_L = 𝒪_K[θ]` (`mono_exists_primitive`) unlocks Mathlib's
+single-generator different formula `conductor_mul_differentIdeal`, giving
+`𝔡_{L/K} = span {f'(θ)}` with `f = minpoly 𝒪_K θ`. Taking `relNorm`
+(`Ideal.relNorm_singleton`) turns this into `span {intNorm(f'(θ))}`, and the
+classical discriminant-derivative-norm identity descended from `K` to `𝒪_K`
+(`intNorm_deriv_minpoly_associated_discr`) together with basis-independence of the
+discriminant (`Algebra.discr_associated_of_basis`) identifies it with
+`span {disc(L/K)}`. -/
 theorem relNorm_differentIdeal_eq_span_discr :
     Ideal.relNorm (𝒪 K) (differentIdeal (𝒪 K) (𝒪 L)) =
-      Ideal.span {Algebra.discr (𝒪 K) ⇑(Module.Free.chooseBasis (𝒪 K) (𝒪 L))} :=
-  sorry
+      Ideal.span {Algebra.discr (𝒪 K) ⇑(Module.Free.chooseBasis (𝒪 K) (𝒪 L))} := by
+  classical
+  haveI : CharZero K := charZero_of_padicAlgebra p K
+  haveI : Algebra.IsSeparable K L := isSeparable_of_padicExtension p K L
+  haveI : Algebra.IsIntegral (𝒪 K) (𝒪 L) := Algebra.IsIntegral.of_finite _ _
+  haveI : Module.IsTorsionFree (𝒪 K) (𝒪 L) :=
+    Module.isTorsionFree_iff_algebraMap_injective.mpr
+      (FaithfulSMul.algebraMap_injective (𝒪 K) (𝒪 L))
+  haveI : IsScalarTower (𝒪 K) K L := IsScalarTower.of_algebraMap_eq fun _ => rfl
+  -- `algebraMap 𝒪_K → 𝒪_L` is local: `𝔪_K = comap 𝔪_L`.
+  haveI hlh : IsLocalHom (algebraMap (𝒪 K) (𝒪 L)) := by
+    have hcomap : Ideal.comap (algebraMap (𝒪 K) (𝒪 L))
+        (IsLocalRing.maximalIdeal (𝒪 L)) = IsLocalRing.maximalIdeal (𝒪 K) :=
+      Ideal.LiesOver.over.symm
+    exact ((IsLocalRing.local_hom_TFAE (algebraMap (𝒪 K) (𝒪 L))).out 4 0).mp hcomap
+  -- residue extension is separable (finite residue fields are perfect).
+  haveI : Algebra.IsSeparable (IsLocalRing.ResidueField (𝒪 K))
+      (IsLocalRing.ResidueField (𝒪 L)) := by
+    haveI : NeZero p := ⟨(Fact.out (p := p.Prime)).ne_zero⟩
+    haveI hfinK : Finite (IsLocalRing.ResidueField (𝒪 K)) := by
+      haveI : Finite (IsLocalRing.ResidueField ℤ_[p]) :=
+        Finite.of_equiv _ (PadicInt.residueField (p := p)).symm.toEquiv
+      exact IsLocalRing.ResidueField.finite_of_finite (R := ℤ_[p]) (S := 𝒪 K) inferInstance
+    haveI : Module.Finite (IsLocalRing.ResidueField (𝒪 K))
+        (IsLocalRing.ResidueField (𝒪 L)) := IsLocalRing.ResidueField.finite_of_module_finite
+    haveI : Algebra.IsAlgebraic (IsLocalRing.ResidueField (𝒪 K))
+        (IsLocalRing.ResidueField (𝒪 L)) := Algebra.IsAlgebraic.of_finite _ _
+    exact Algebra.IsAlgebraic.isSeparable_of_perfectField
+  -- monogenicity: `𝒪_L = 𝒪_K[θ]`.
+  obtain ⟨θ, hθtop⟩ : ∃ θ : 𝒪 L, Algebra.adjoin (𝒪 K) ({θ} : Set (𝒪 L)) = ⊤ :=
+    Neukirch.Chapter2.Sections8to10.mono_exists_primitive
+  have hθ_int : IsIntegral (𝒪 K) θ := Algebra.IsIntegral.isIntegral θ
+  -- the integral power basis with generator `θ`.
+  let e : ↥(Algebra.adjoin (𝒪 K) ({θ} : Set (𝒪 L))) ≃ₐ[𝒪 K] (𝒪 L) :=
+    (Subalgebra.equivOfEq _ _ hθtop).trans Subalgebra.topEquiv
+  let pb : PowerBasis (𝒪 K) (𝒪 L) := (Algebra.adjoin.powerBasis' hθ_int).map e
+  have hpb_gen : pb.gen = θ := by
+    show e (Algebra.adjoin.powerBasis' hθ_int).gen = θ
+    rw [Algebra.adjoin.powerBasis'_gen]; rfl
+  -- generator viewed in `L`, its `K`-integrality and minimal polynomial.
+  have hθL_int : IsIntegral K (algebraMap (𝒪 L) L θ) := Algebra.IsIntegral.isIntegral _
+  have hmin : minpoly K (algebraMap (𝒪 L) L θ) =
+      Polynomial.map (algebraMap (𝒪 K) K) (minpoly (𝒪 K) θ) :=
+    minpoly.isIntegrallyClosed_eq_field_fractions K L hθ_int
+  -- degree bookkeeping: `deg f = [L:K]`.
+  have hfdeg : (minpoly (𝒪 K) θ).natDegree = Module.finrank K L := by
+    have h1 : pb.dim = (minpoly (𝒪 K) θ).natDegree := by
+      show (Algebra.adjoin.powerBasis' hθ_int).dim = _
+      rw [Algebra.adjoin.powerBasis'_dim]
+    have h2 : Module.finrank (𝒪 K) (𝒪 L) = pb.dim := pb.finrank
+    rw [← h1, ← h2]; exact (free_finrank K L).2
+  have hdegK : (minpoly K (algebraMap (𝒪 L) L θ)).natDegree =
+      (minpoly (𝒪 K) θ).natDegree := by
+    rw [hmin, Polynomial.natDegree_map_eq_of_injective (IsFractionRing.injective (𝒪 K) K)]
+  -- `K⟮θ⟯ = ⊤`, the hypothesis of `conductor_mul_differentIdeal`.
+  have hxK : Algebra.adjoin K {algebraMap (𝒪 L) L θ} = ⊤ := by
+    have hsub : (Algebra.adjoin K {algebraMap (𝒪 L) L θ}).toSubmodule = ⊤ := by
+      apply Submodule.eq_top_of_finrank_eq
+      show Module.finrank K ↥(Algebra.adjoin K {algebraMap (𝒪 L) L θ}) = Module.finrank K L
+      rw [(Algebra.adjoin.powerBasis' hθL_int).finrank, Algebra.adjoin.powerBasis'_dim,
+        hdegK, hfdeg]
+    have htop : (⊤ : Subalgebra K L).toSubmodule = (⊤ : Submodule K L) := by ext x; simp
+    exact Subalgebra.toSubmodule_injective (hsub.trans htop.symm)
+  -- the conductor is trivial, so the different is `span {f'(θ)}`.
+  have hcond : conductor (𝒪 K) θ = ⊤ := by
+    rw [Ideal.eq_top_iff_one, mem_conductor_iff]
+    intro b
+    rw [one_mul, hθtop]
+    exact Algebra.mem_top
+  have hdiff : differentIdeal (𝒪 K) (𝒪 L) =
+      Ideal.span {Polynomial.aeval θ (Polynomial.derivative (minpoly (𝒪 K) θ))} := by
+    have h := conductor_mul_differentIdeal (𝒪 K) K L θ hxK
+    rwa [hcond, Ideal.top_mul] at h
+  -- discriminant = ± norm of the derivative (via the power basis), and basis independence.
+  have hG2 := intNorm_deriv_minpoly_associated_discr (K := K) (L := L) pb
+  rw [hpb_gen] at hG2
+  have hG1 := Algebra.discr_associated_of_basis (R := 𝒪 K)
+    pb.basis (Module.Free.chooseBasis (𝒪 K) (𝒪 L))
+  rw [hdiff, Ideal.relNorm_singleton]
+  exact Ideal.span_singleton_eq_span_singleton.mpr (hG2.trans hG1)
 
 open IsLocalRing in
 /-- `𝔪_L` is unramified over `𝒪_K` iff `e(L/K) = 1`. The forward direction is
