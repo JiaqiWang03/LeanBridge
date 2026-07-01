@@ -337,12 +337,25 @@ instance : IsIntegralClosure (ringOfIntegers p L) (ringOfIntegers p K) L := by
 
 instance : Algebra.IsIntegral K L := Algebra.IsIntegral.of_finite K L
 
+theorem isSeparable_of_padicExtension (p : ℕ) [Fact p.Prime]
+    (K : Type*) [Field K] [Algebra ℚ_[p] K]
+    (L : Type*) [Field L] [Algebra K L] [Module.Finite K L] :
+    Algebra.IsSeparable K L := by
+  haveI : CharZero K := charZero_of_padicAlgebra p K
+  exact Algebra.IsSeparable.of_integral K L
+
 /-- `K` has characteristic zero (it contains `ℚ_[p]`), hence `L / K` is separable.
 Phrased over `𝒪_K` so that `p` is fixed by the statement. -/
 instance : Module.Finite (ringOfIntegers p K) (ringOfIntegers p L) := by
-  haveI : CharZero K := charZero_of_injective_algebraMap (algebraMap ℚ_[p] K).injective
-  haveI : Algebra.IsSeparable K L := Algebra.IsSeparable.of_integral K L
+  haveI : Algebra.IsSeparable K L := isSeparable_of_padicExtension p K L
   exact IsIntegralClosure.finite (ringOfIntegers p K) K L (ringOfIntegers p L)
+
+instance : FaithfulSMul (ringOfIntegers p K) (ringOfIntegers p L) :=
+  (faithfulSMul_iff_algebraMap_injective (ringOfIntegers p K) (ringOfIntegers p L)).2
+    fun _ _ hab => Subtype.ext ((algebraMap K L).injective (Subtype.ext_iff.1 hab))
+
+instance : Module.IsTorsionFree (ringOfIntegers p K) L :=
+  .trans_faithfulSMul (ringOfIntegers p K) (ringOfIntegers p L) L
 
 omit [PadicField p L] in
 /-- `𝒪_L` is a finite free `𝒪_K`-module of rank `[L : K]`
@@ -355,13 +368,7 @@ integral closure of `𝒪_K` in `L`. -/
 theorem free_finrank :
     Module.Free (ringOfIntegers p K) (ringOfIntegers p L) ∧
       Module.finrank (ringOfIntegers p K) (ringOfIntegers p L) = Module.finrank K L := by
-  haveI : CharZero K := charZero_of_injective_algebraMap (algebraMap ℚ_[p] K).injective
-  haveI : Algebra.IsSeparable K L := Algebra.IsSeparable.of_integral K L
-  haveI : FaithfulSMul (ringOfIntegers p K) (ringOfIntegers p L) :=
-    (faithfulSMul_iff_algebraMap_injective (ringOfIntegers p K) (ringOfIntegers p L)).2
-      fun a b hab => Subtype.ext ((algebraMap K L).injective (Subtype.ext_iff.1 hab))
-  haveI : Module.IsTorsionFree (ringOfIntegers p K) L :=
-    .trans_faithfulSMul (ringOfIntegers p K) (ringOfIntegers p L) L
+  haveI : Algebra.IsSeparable K L := isSeparable_of_padicExtension p K L
   exact ⟨IsIntegralClosure.module_free (ringOfIntegers p K) K L (ringOfIntegers p L),
          IsIntegralClosure.rank (ringOfIntegers p K) K L (ringOfIntegers p L)⟩
 
@@ -382,7 +389,6 @@ of the `p`-adic fields `K ⊆ L`. -/
 theorem ramificationIdx_mul_inertiaDeg :
     ramificationIdx p K L * inertiaDeg p K L = Module.finrank K L := by
   haveI : CharZero K := charZero_of_injective_algebraMap (algebraMap ℚ_[p] K).injective
-  haveI : Algebra.IsSeparable K L := Algebra.IsSeparable.of_integral K L
   have hp0 : IsLocalRing.maximalIdeal (ringOfIntegers p K) ≠ ⊥ := fun h =>
     IsDiscreteValuationRing.not_isField (ringOfIntegers p K)
       ((IsLocalRing.isField_iff_maximalIdeal_eq).2 h)
