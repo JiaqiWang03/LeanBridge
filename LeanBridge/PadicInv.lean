@@ -38,14 +38,46 @@ instance instAlgebraPadicInt : Algebra ℤ_[p] K :=
 instance instIsScalarTower : IsScalarTower ℤ_[p] ℚ_[p] K :=
   IsScalarTower.of_algebraMap_eq fun _ => rfl
 
+omit [PadicField p K] in
+theorem algebraMap_padicInt_injective : Function.Injective (algebraMap ℤ_[p] K) := by
+  rw [IsScalarTower.algebraMap_eq ℤ_[p] ℚ_[p] K, RingHom.coe_comp]
+  exact (algebraMap ℚ_[p] K).injective.comp (IsFractionRing.injective ℤ_[p] ℚ_[p])
+
+omit [PadicField p K] in
+theorem charZero_of_padicAlgebra (p : ℕ) [Fact p.Prime] (K : Type*) [Field K]
+    [Algebra ℚ_[p] K] : CharZero K :=
+  charZero_of_injective_algebraMap (algebraMap ℚ_[p] K).injective
+
+instance instIsAlgebraic : Algebra.IsAlgebraic ℚ_[p] K :=
+  Algebra.IsAlgebraic.of_finite ℚ_[p] K
+
+instance instIsSeparable : Algebra.IsSeparable ℚ_[p] K := by
+  haveI : CharZero K := charZero_of_padicAlgebra p K
+  exact Algebra.IsSeparable.of_integral ℚ_[p] K
+
+instance instIsTorsionFreePadicInt : Module.IsTorsionFree ℤ_[p] K :=
+  Module.isTorsionFree_iff_algebraMap_injective.mpr (algebraMap_padicInt_injective p K)
+
 /-- The ring of integers `𝒪_K` of a `p`-adic field `K`: the integral closure of
 `ℤ_[p]` (the integers of `ℚ_[p]`) in `K`. -/
 def ringOfIntegers : Subalgebra ℤ_[p] K := integralClosure ℤ_[p] K
 
 @[inherit_doc] scoped notation "𝒪[" K "]" => PadicField.ringOfIntegers _ K
 
+instance instIsIntegralClosure : IsIntegralClosure (ringOfIntegers p K) ℤ_[p] K :=
+  integralClosure.isIntegralClosure ℤ_[p] K
+
 instance : IsFractionRing (ringOfIntegers p K) K :=
   integralClosure.isFractionRing_of_finite_extension ℚ_[p] K
+
+instance instAlgebraIsIntegralRingOfIntegers : Algebra.IsIntegral ℤ_[p] (ringOfIntegers p K) :=
+  inferInstanceAs (Algebra.IsIntegral ℤ_[p] (integralClosure ℤ_[p] K))
+
+instance instFiniteRingOfIntegers : Module.Finite ℤ_[p] (ringOfIntegers p K) :=
+  IsIntegralClosure.finite ℤ_[p] ℚ_[p] K (ringOfIntegers p K)
+
+instance instFreeRingOfIntegers : Module.Free ℤ_[p] (ringOfIntegers p K) :=
+  IsIntegralClosure.module_free ℤ_[p] ℚ_[p] K (ringOfIntegers p K)
 
 /-! ### Proof that `𝒪_K` is a discrete valuation ring (`prop:padic-is-dvf`)
 
@@ -54,8 +86,6 @@ finite extension `K`. An element of `K` whose spectral norm is `≤ 1` is integr
 (its minimal polynomial has coefficients of norm `≤ 1`, i.e. in `ℤ_[p]`); hence
 `𝒪_K = integralClosure ℤ_[p] K` is exactly the closed unit ball of the spectral norm, so it is
 a valuation ring. Being a local Dedekind domain that is not a field, it is a DVR. -/
-
-instance : Algebra.IsAlgebraic ℚ_[p] K := Algebra.IsAlgebraic.of_finite ℚ_[p] K
 
 /-- If the spectral norm of `x : K` over `ℚ_[p]` is `≤ 1`, then `x` is integral over `ℤ_[p]`:
 the coefficients of its minimal polynomial have norm `≤ 1`, hence lie in `ℤ_[p]`. -/
@@ -102,17 +132,13 @@ instance instValuationRing : ValuationRing (integralClosure ℤ_[p] K) := by
     rw [spectralNorm_inv]
     exact inv_le_one_of_one_le₀ hx
 
-instance isDedekind : IsDedekindDomain (integralClosure ℤ_[p] K) := by
-  haveI : CharZero K := charZero_of_injective_algebraMap (algebraMap ℚ_[p] K).injective
-  haveI : Algebra.IsSeparable ℚ_[p] K := Algebra.IsSeparable.of_integral ℚ_[p] K
-  exact IsIntegralClosure.isDedekindDomain ℤ_[p] ℚ_[p] K (integralClosure ℤ_[p] K)
+instance isDedekind : IsDedekindDomain (integralClosure ℤ_[p] K) :=
+    IsIntegralClosure.isDedekindDomain ℤ_[p] ℚ_[p] K (integralClosure ℤ_[p] K)
 
 omit [PadicField p K] in
 theorem notField : ¬ IsField (integralClosure ℤ_[p] K) := by
   have hinj : Function.Injective (algebraMap ℤ_[p] (integralClosure ℤ_[p] K)) := by
-    have hK : Function.Injective (algebraMap ℤ_[p] K) := by
-      rw [IsScalarTower.algebraMap_eq ℤ_[p] ℚ_[p] K, RingHom.coe_comp]
-      exact (algebraMap ℚ_[p] K).injective.comp (IsFractionRing.injective ℤ_[p] ℚ_[p])
+    have hK := algebraMap_padicInt_injective p K
     rw [IsScalarTower.algebraMap_eq ℤ_[p] (integralClosure ℤ_[p] K) K, RingHom.coe_comp] at hK
     exact hK.of_comp
   intro hF
@@ -127,12 +153,104 @@ instance instIsDiscreteValuationRing :
   have hD : IsDedekindDomain (integralClosure ℤ_[p] K) := inferInstance
   exact ((IsDiscreteValuationRing.TFAE (integralClosure ℤ_[p] K) (notField p K)).out 2 0).mp hD
 
+private theorem isPrecomplete_of_finite_of_adicComplete
+    {R : Type*} [CommRing R] {I : Ideal R}
+    {M : Type*} [AddCommGroup M] [Module R M]
+    [Module.Finite R M] [IsAdicComplete I R] : IsPrecomplete I M := by
+  rw [← AdicCompletion.of_surjective_iff]
+  intro y
+  obtain ⟨z, hz⟩ := AdicCompletion.ofTensorProduct_surjective_of_finite I M y
+  subst hz
+  obtain ⟨m, hm⟩ : ∃ m : M,
+      AdicCompletion.ofTensorProduct I M z = AdicCompletion.of I M m := by
+    refine TensorProduct.induction_on z ?h0 ?htmul ?hadd
+    · exact ⟨0, by simp⟩
+    · intro a m
+      obtain ⟨r, hr⟩ := AdicCompletion.of_surjective I R a
+      refine ⟨r • m, ?_⟩
+      rw [← hr]
+      rw [AdicCompletion.ofTensorProduct_tmul]
+      change (algebraMap R (AdicCompletion I R) r) • (AdicCompletion.of I M m) =
+        (AdicCompletion.of I M) (r • m)
+      exact (AdicCompletion.of I M).map_smul r m
+    · intro z₁ z₂ hz₁ hz₂
+      obtain ⟨m₁, hm₁⟩ := hz₁
+      obtain ⟨m₂, hm₂⟩ := hz₂
+      exact ⟨m₁ + m₂, by simp [hm₁, hm₂]⟩
+  exact ⟨m, hm.symm⟩
+
+private theorem isAdicComplete_of_finite_of_adicComplete
+    {R : Type*} [CommRing R] {I : Ideal R}
+    {M : Type*} [AddCommGroup M] [Module R M]
+    [Module.Finite R M] [IsHausdorff I M] [IsAdicComplete I R] : IsAdicComplete I M where
+  toIsHausdorff := inferInstance
+  toIsPrecomplete := isPrecomplete_of_finite_of_adicComplete
+
+private lemma isAdicComplete_of_pow
+    {R : Type*} [CommRing R] {M : Type*} [AddCommGroup M] [Module R M]
+    (I : Ideal R) {e : ℕ} (he : e ≠ 0)
+    [IsAdicComplete (I ^ e) M] : IsAdicComplete I M where
+  haus' x hx := by
+    apply IsHausdorff.haus (show IsHausdorff (I ^ e) M from inferInstance) x
+    intro n
+    simpa [pow_mul] using hx (e * n)
+  prec' f hf := by
+    have hg : ∀ {m n : ℕ}, m ≤ n → f (e * m) ≡ f (e * n)
+        [SMOD (I ^ e) ^ m • (⊤ : Submodule R M)] := by
+      intro m n hmn
+      simpa [pow_mul] using hf (Nat.mul_le_mul_left e hmn)
+    obtain ⟨L, hL⟩ :=
+      (IsPrecomplete.prec (show IsPrecomplete (I ^ e) M from inferInstance)
+        (f := fun n => f (e * n))) hg
+    refine ⟨L, fun n => ?_⟩
+    have hnle : n ≤ e * n := Nat.le_mul_of_pos_left n (Nat.pos_of_ne_zero he)
+    exact (hf hnle).trans (SModEq.mono (by
+      rw [← pow_mul]
+      exact Submodule.pow_smul_top_le I M hnle) (hL n))
+
 /-- `𝒪_K` is `𝔪_K`-adically complete (the completeness half of
 `prop:padic-is-dvf`): the integral closure of the complete DVR `ℤ_[p]` in a
 finite extension is again complete. -/
 instance instIsAdicComplete :
     IsAdicComplete (IsLocalRing.maximalIdeal (ringOfIntegers p K)) (ringOfIntegers p K) := by
-  sorry
+  let S := ringOfIntegers p K
+  have hZp : IsAdicComplete (IsLocalRing.maximalIdeal ℤ_[p]) S := by
+    haveI : IsHausdorff (IsLocalRing.maximalIdeal ℤ_[p]) S := inferInstance
+    exact isAdicComplete_of_finite_of_adicComplete
+  have hmap :
+      IsAdicComplete ((IsLocalRing.maximalIdeal ℤ_[p]).map (algebraMap ℤ_[p] S)) S :=
+    (IsAdicComplete.map_algebraMap_iff (I := IsLocalRing.maximalIdeal ℤ_[p]) (M := S)).mpr hZp
+  let J : Ideal S := (IsLocalRing.maximalIdeal ℤ_[p]).map (algebraMap ℤ_[p] S)
+  have hinj : Function.Injective (algebraMap ℤ_[p] S) := by
+    have hK := algebraMap_padicInt_injective p K
+    rw [IsScalarTower.algebraMap_eq ℤ_[p] S K, RingHom.coe_comp] at hK
+    exact hK.of_comp
+  have hmZp_bot : IsLocalRing.maximalIdeal ℤ_[p] ≠ ⊥ := by
+    intro h
+    exact (IsDiscreteValuationRing.not_isField ℤ_[p])
+      ((IsLocalRing.isField_iff_maximalIdeal_eq).2 h)
+  have hJbot : J ≠ ⊥ := by
+    dsimp [J]
+    rw [Ideal.map_eq_bot_iff_of_injective hinj]
+    exact hmZp_bot
+  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible S
+  obtain ⟨e, hJe⟩ :=
+    IsDiscreteValuationRing.ideal_eq_span_pow_irreducible (R := S) hJbot hϖ
+  have hJm : J = IsLocalRing.maximalIdeal S ^ e := by
+    rw [hJe, hϖ.maximalIdeal_eq, Ideal.span_singleton_pow]
+  have halgint : (algebraMap ℤ_[p] S).IsIntegral := by
+    exact Algebra.IsIntegral.isIntegral (R := ℤ_[p]) (A := S)
+  have hJtop_ne : J ≠ ⊤ := by
+    dsimp [J]
+    rw [Ideal.map_eq_top_iff (algebraMap ℤ_[p] S) hinj halgint]
+    exact (IsLocalRing.maximalIdeal.isMaximal ℤ_[p]).ne_top
+  have he : e ≠ 0 := by
+    intro he0
+    apply hJtop_ne
+    simp [hJm, he0]
+  haveI : IsAdicComplete (IsLocalRing.maximalIdeal S ^ e) S := by
+    rwa [← hJm]
+  exact isAdicComplete_of_pow (M := S) (IsLocalRing.maximalIdeal S) he
 
 /-!
 ## Invariants of an extension `L / K` (blueprint §1.2, §1.3, §1.4)
