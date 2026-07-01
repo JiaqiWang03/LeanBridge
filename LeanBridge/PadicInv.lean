@@ -1,4 +1,5 @@
 import Mathlib
+import LeanBridge.Mono
 
 /-!
 # Invariants of `p`-adic fields: the field and its ring of integers
@@ -255,6 +256,8 @@ instance instIsAdicComplete :
   haveI : IsAdicComplete (IsLocalRing.maximalIdeal S ^ e) S := by
     rwa [← hJm]
   exact isAdicComplete_of_pow (M := S) (IsLocalRing.maximalIdeal S) he
+
+-- TODO : instance : IsNonarchimedeanLocalField K
 
 /-!
 ## Invariants of an extension `L / K` (blueprint §1.2, §1.3, §1.4)
