@@ -1,6 +1,4 @@
 import Mathlib
--- Adjust this import to the module that defines `PadicField` (the file you shared),
--- likely `LeanBridge.PadicInv` given the blueprint path `numina/blueprints/padicinv/`.
 import LeanBridge.PadicInv
 
 /-!
@@ -437,8 +435,156 @@ theorem Q2sqrt2_not_tame : ¬ IsTamelyRamified ℚ_[2] Q2sqrt2 := by
   unfold IsWildlyRamified at h
   exact not_not_intro h
 
+/-- In a DVR, every nonzero ideal is a power of the maximal ideal. -/
+private theorem exists_maximalIdeal_pow_of_ne_bot {S : Type*} [CommRing S] [IsDomain S]
+    [IsDiscreteValuationRing S] {I : Ideal S} (hI : I ≠ ⊥) :
+    ∃ n : ℕ, I = (IsLocalRing.maximalIdeal S) ^ n := by
+  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible S
+  obtain ⟨n, hn⟩ := IsDiscreteValuationRing.ideal_eq_span_pow_irreducible hI hϖ
+  exact ⟨n, by rw [hn, ← Ideal.span_singleton_pow, ← hϖ.maximalIdeal_eq]⟩
+
 /-- Different exponent `δ = 3` (from `v_L(f'(√2)) = v_L(2√2) = 3`). -/
-theorem Q2sqrt2_differentExponent : differentExponent ℚ_[2] Q2sqrt2 = 3 := sorry
+theorem Q2sqrt2_differentExponent : differentExponent ℚ_[2] Q2sqrt2 = 3 := by
+  classical
+  haveI : Algebra.IsIntegral (𝒪 ℚ_[2]) (𝒪 Q2sqrt2) := Algebra.IsIntegral.of_finite _ _
+  haveI : Algebra.IsIntegral ℚ_[2] Q2sqrt2 := Algebra.IsIntegral.of_finite _ _
+  haveI : IsScalarTower (𝒪 ℚ_[2]) ℚ_[2] Q2sqrt2 := IsScalarTower.of_algebraMap_eq fun _ => rfl
+  haveI : Module.IsTorsionFree (𝒪 ℚ_[2]) (𝒪 Q2sqrt2) :=
+    Module.isTorsionFree_iff_algebraMap_injective.mpr (FaithfulSMul.algebraMap_injective _ _)
+  obtain ⟨θ, hθmem, hθpow⟩ := Q2sqrt2_exists_integral_root
+  have hpElt2 : pElt 2 = (2 : 𝒪 ℚ_[2]) := by
+    apply Subtype.ext
+    rfl
+  have h2θ : (2 : 𝒪 Q2sqrt2) = θ ^ 2 := by rw [hθpow, hpElt2, map_ofNat]
+  have hmap_two : algebraMap (𝒪 ℚ_[2]) (𝒪 Q2sqrt2) (2 : 𝒪 ℚ_[2]) =
+      (2 : 𝒪 Q2sqrt2) := by
+    apply Subtype.ext
+    rfl
+  have hpElt_ne : (pElt 2) ≠ 0 := by
+    simp only [pElt]
+    rw [Ne, map_eq_zero_iff _ (FaithfulSMul.algebraMap_injective ℤ_[2] (𝒪 ℚ_[2]))]
+    norm_num
+  have hθne : θ ≠ 0 := by
+    intro h
+    rw [h, zero_pow (by norm_num)] at hθpow
+    exact hpElt_ne ((map_eq_zero_iff _ (FaithfulSMul.algebraMap_injective _ _)).mp hθpow.symm)
+  have hmapne : (IsLocalRing.maximalIdeal (𝒪 ℚ_[2])).map
+      (algebraMap (𝒪 ℚ_[2]) (𝒪 Q2sqrt2)) ≠ ⊥ := by
+    rw [Ne, Ideal.map_eq_bot_iff_of_injective (FaithfulSMul.algebraMap_injective _ _)]
+    exact IsDiscreteValuationRing.not_a_field (𝒪 ℚ_[2])
+  have hstrictL : StrictAnti (fun n : ℕ => (IsLocalRing.maximalIdeal (𝒪 Q2sqrt2)) ^ n) :=
+    Ideal.pow_right_strictAnti _ (IsDiscreteValuationRing.not_a_field _)
+      (IsLocalRing.maximalIdeal.isMaximal _).ne_top
+  have hmapId : (IsLocalRing.maximalIdeal (𝒪 ℚ_[2])).map (algebraMap (𝒪 ℚ_[2]) (𝒪 Q2sqrt2))
+      = (IsLocalRing.maximalIdeal (𝒪 Q2sqrt2)) ^ 2 := by
+    obtain ⟨m, hm⟩ := exists_maximalIdeal_pow_of_ne_bot hmapne
+    have hram : ramificationIdx ℚ_[2] Q2sqrt2 = m := by
+      show Ideal.ramificationIdx (R := 𝒪 ℚ_[2]) (S := 𝒪 Q2sqrt2)
+        (IsLocalRing.maximalIdeal (𝒪 ℚ_[2])) (IsLocalRing.maximalIdeal (𝒪 Q2sqrt2)) = m
+      refine Ideal.ramificationIdx_spec (le_of_eq hm) ?_
+      rw [hm]; exact (hstrictL (Nat.lt_succ_self m)).2
+    rw [Q2sqrt2_ramificationIdx] at hram
+    rw [hm, ← hram]
+  have hsqfull : Ideal.span {θ} ^ 2 = (IsLocalRing.maximalIdeal (𝒪 Q2sqrt2)) ^ 2 := by
+    rw [← hmapId, Ideal.span_singleton_pow, hθpow, Qpe_maximalIdeal_eq_span (p := 2),
+      Ideal.map_span, Set.image_singleton]
+  obtain ⟨n, hn⟩ := exists_maximalIdeal_pow_of_ne_bot (I := Ideal.span {θ})
+    (by rwa [Ne, Ideal.span_singleton_eq_bot])
+  have hn1 : n = 1 := by
+    have hpow : (IsLocalRing.maximalIdeal (𝒪 Q2sqrt2)) ^ (n * 2)
+        = (IsLocalRing.maximalIdeal (𝒪 Q2sqrt2)) ^ 2 := by
+      rw [← hsqfull, hn, ← pow_mul]
+    have := hstrictL.injective hpow
+    omega
+  have huniformizer : IsLocalRing.maximalIdeal (𝒪 Q2sqrt2) = Ideal.span {θ} := by
+    rw [hn, hn1, pow_one]
+  have hθirr : Irreducible θ :=
+    IsDiscreteValuationRing.irreducible_of_span_eq_maximalIdeal θ hθne huniformizer
+  haveI hlh : IsLocalHom (algebraMap (𝒪 ℚ_[2]) (𝒪 Q2sqrt2)) := by
+    have hcomap : Ideal.comap (algebraMap (𝒪 ℚ_[2]) (𝒪 Q2sqrt2))
+        (IsLocalRing.maximalIdeal (𝒪 Q2sqrt2)) = IsLocalRing.maximalIdeal (𝒪 ℚ_[2]) :=
+      Ideal.LiesOver.over.symm
+    exact ((IsLocalRing.local_hom_TFAE (algebraMap (𝒪 ℚ_[2]) (𝒪 Q2sqrt2))).out 4 0).mp hcomap
+  have hfr : Module.finrank (IsLocalRing.ResidueField (𝒪 ℚ_[2]))
+      (IsLocalRing.ResidueField (𝒪 Q2sqrt2)) = 1 := by
+    have h : Ideal.inertiaDeg (IsLocalRing.maximalIdeal (𝒪 ℚ_[2]))
+        (IsLocalRing.maximalIdeal (𝒪 Q2sqrt2)) = 1 := Q2sqrt2_inertiaDeg
+    rwa [Ideal.inertiaDeg_algebraMap] at h
+  have hξ_prim : IntermediateField.adjoin (IsLocalRing.ResidueField (𝒪 ℚ_[2]))
+      ({IsLocalRing.residue (𝒪 Q2sqrt2) θ} :
+        Set (IsLocalRing.ResidueField (𝒪 Q2sqrt2))) = ⊤ := by
+    have hbot : (⊤ : IntermediateField (IsLocalRing.ResidueField (𝒪 ℚ_[2]))
+        (IsLocalRing.ResidueField (𝒪 Q2sqrt2))) = ⊥ := by
+      rw [← IntermediateField.finrank_eq_one_iff, IntermediateField.finrank_top']
+      exact hfr
+    rw [eq_top_iff, hbot]; exact bot_le
+  have hadjθ : Algebra.adjoin (𝒪 ℚ_[2]) ({θ} : Set (𝒪 Q2sqrt2)) = ⊤ := by
+    have h := Neukirch.Chapter2.Sections8to10.mono_adjoin_two_gen θ θ hξ_prim hθirr
+    rwa [Set.pair_eq_singleton] at h
+  have hcond : conductor (𝒪 ℚ_[2]) θ = ⊤ := by
+    rw [Ideal.eq_top_iff_one, mem_conductor_iff]
+    intro b; rw [one_mul, hadjθ]; exact Algebra.mem_top
+  have hθ_int : IsIntegral (𝒪 ℚ_[2]) θ := Algebra.IsIntegral.isIntegral θ
+  set x := algebraMap (𝒪 Q2sqrt2) Q2sqrt2 θ with hxdef
+  have hxL_int : IsIntegral ℚ_[2] x := Algebra.IsIntegral.isIntegral x
+  have hx_sq : x ^ 2 = (2 : Q2sqrt2) := by
+    rw [hxdef, ← map_pow, hθpow, hpElt2, hmap_two]
+    rfl
+  have hmin_x : minpoly ℚ_[2] x = sqrtTwoPoly := by
+    refine (minpoly.eq_of_irreducible_of_monic (Fact.out : Irreducible sqrtTwoPoly) ?_ ?_).symm
+    · change Polynomial.aeval x (X ^ 2 - C (2 : ℚ_[2])) = 0
+      simp only [Polynomial.aeval_sub, Polynomial.aeval_X, map_pow, Polynomial.aeval_C]
+      rw [hx_sq]
+      change (2 : Q2sqrt2) - (2 : Q2sqrt2) = 0
+      norm_num
+    · exact (monic_X_pow_sub_C _ (by norm_num))
+  have hxK : Algebra.adjoin ℚ_[2] {x} = ⊤ := by
+    have hsub : (Algebra.adjoin ℚ_[2] {x}).toSubmodule = ⊤ := by
+      apply Submodule.eq_top_of_finrank_eq
+      show Module.finrank ℚ_[2] ↥(Algebra.adjoin ℚ_[2] {x}) = Module.finrank ℚ_[2] Q2sqrt2
+      rw [(Algebra.adjoin.powerBasis' hxL_int).finrank, Algebra.adjoin.powerBasis'_dim,
+        hmin_x, Q2sqrt2_finrank]
+      simp [sqrtTwoPoly]
+    have htop : (⊤ : Subalgebra ℚ_[2] Q2sqrt2).toSubmodule = (⊤ : Submodule ℚ_[2] Q2sqrt2) := by
+      ext y; simp
+    exact Subalgebra.toSubmodule_injective (hsub.trans htop.symm)
+  have hmapC : (X ^ 2 - C (pElt 2) : Polynomial (𝒪 ℚ_[2])).map
+      (algebraMap (𝒪 ℚ_[2]) ℚ_[2]) = sqrtTwoPoly := by
+    rw [Polynomial.map_sub, Polynomial.map_pow, Polynomial.map_X, Polynomial.map_C,
+      sqrtTwoPoly, hpElt2, map_ofNat]
+  have hmap_min : (minpoly (𝒪 ℚ_[2]) θ).map (algebraMap (𝒪 ℚ_[2]) ℚ_[2]) = sqrtTwoPoly := by
+    have h := minpoly.isIntegrallyClosed_eq_field_fractions ℚ_[2] Q2sqrt2 hθ_int
+    rw [hmin_x] at h
+    exact h.symm
+  have hmin_O : minpoly (𝒪 ℚ_[2]) θ = X ^ 2 - C (pElt 2) := by
+    have hinj : Function.Injective (Polynomial.map (algebraMap (𝒪 ℚ_[2]) ℚ_[2])) :=
+      Polynomial.map_injective _ (IsFractionRing.injective (𝒪 ℚ_[2]) ℚ_[2])
+    apply hinj
+    rw [hmap_min, hmapC]
+  have hderiv : Polynomial.aeval θ (Polynomial.derivative (minpoly (𝒪 ℚ_[2]) θ)) = θ ^ 3 := by
+    have hstep : Polynomial.aeval θ (Polynomial.derivative (minpoly (𝒪 ℚ_[2]) θ))
+        = 2 * θ := by
+      rw [hmin_O, Polynomial.derivative_sub, Polynomial.derivative_X_pow,
+        Polynomial.derivative_C, sub_zero]
+      norm_num [Polynomial.aeval_mul, hmap_two]
+    rw [hstep]
+    calc (2 : 𝒪 Q2sqrt2) * θ = (θ ^ 2) * θ := by rw [h2θ]
+      _ = θ ^ 3 := by ring
+  have hdiff : differentIdeal (𝒪 ℚ_[2]) (𝒪 Q2sqrt2) =
+      Ideal.span {Polynomial.aeval θ (Polynomial.derivative (minpoly (𝒪 ℚ_[2]) θ))} := by
+    have h := conductor_mul_differentIdeal (𝒪 ℚ_[2]) ℚ_[2] Q2sqrt2 θ hxK
+    rwa [hcond, Ideal.top_mul] at h
+  have hdiff3 : differentIdeal (𝒪 ℚ_[2]) (𝒪 Q2sqrt2)
+      = (IsLocalRing.maximalIdeal (𝒪 Q2sqrt2)) ^ 3 := by
+    rw [hdiff, hderiv, ← Ideal.span_singleton_pow, ← huniformizer]
+  have hfinal : multiplicity (IsLocalRing.maximalIdeal (𝒪 Q2sqrt2))
+      ((IsLocalRing.maximalIdeal (𝒪 Q2sqrt2)) ^ 3) = 3 := by
+    refine multiplicity_pow_self ?_ ?_ 3
+    · rw [Ideal.zero_eq_bot]; exact IsDiscreteValuationRing.not_a_field (𝒪 Q2sqrt2)
+    · exact Ideal.isUnit_iff.not.mpr (IsLocalRing.maximalIdeal.isMaximal (𝒪 Q2sqrt2)).ne_top
+  show multiplicity (IsLocalRing.maximalIdeal (𝒪 Q2sqrt2))
+    (differentIdeal (𝒪 ℚ_[2]) (𝒪 Q2sqrt2)) = 3
+  rw [hdiff3]; exact hfinal
 
 /-- Discriminant exponent `d = f·δ = 3`. -/
 theorem Q2sqrt2_discriminantExponent : discriminantExponent ℚ_[2] Q2sqrt2 = 3 := by
