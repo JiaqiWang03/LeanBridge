@@ -23,11 +23,7 @@ noncomputable def mono_ramificationIdx
   Classical.choose
     (IsDiscreteValuationRing.ideal_eq_span_pow_irreducible
       (s := Ideal.map (algebraMap 𝒪K 𝒪) (IsLocalRing.maximalIdeal 𝒪K))
-      (by
-        have hmK : IsLocalRing.maximalIdeal 𝒪K ≠ ⊥ :=
-          IsDiscreteValuationRing.not_a_field 𝒪K
-        exact Ideal.map_ne_bot_of_ne_bot hmK)
-      hπ)
+      (Ideal.map_ne_bot_of_ne_bot (IsDiscreteValuationRing.not_a_field 𝒪K)) hπ)
 
 /-- `𝔪K·𝒪 = 𝔪^e`. -/
 theorem mono_mapMK_eq_pow
@@ -45,21 +41,22 @@ theorem mono_mapMK_eq_pow
     Classical.choose_spec
       (IsDiscreteValuationRing.ideal_eq_span_pow_irreducible
         (s := Ideal.map (algebraMap 𝒪K 𝒪) (IsLocalRing.maximalIdeal 𝒪K))
-        (by
-          have hmK : IsLocalRing.maximalIdeal 𝒪K ≠ ⊥ :=
-            IsDiscreteValuationRing.not_a_field 𝒪K
-          exact Ideal.map_ne_bot_of_ne_bot hmK)
-        hπ)
+        (Ideal.map_ne_bot_of_ne_bot (IsDiscreteValuationRing.not_a_field 𝒪K)) hπ)
   rw [hspec, mono_maximalIdeal_eq_span hπ, Ideal.span_singleton_pow]
 
 /-! ## Ambient setup (mirrors the keystone typeclass conventions) -/
 
-variable {𝒪K : Type*} [CommRing 𝒪K] [IsDomain 𝒪K]
-    [IsDiscreteValuationRing 𝒪K]
-variable {𝒪 : Type*} [CommRing 𝒪] [IsDomain 𝒪]
-    [IsDiscreteValuationRing 𝒪]
-variable [Algebra 𝒪K 𝒪] [Module.Finite 𝒪K 𝒪] [FaithfulSMul 𝒪K 𝒪]
-variable [IsLocalHom (algebraMap 𝒪K 𝒪)]
+variable
+    {𝒪K : Type*} [CommRing 𝒪K] [IsDomain 𝒪K] [IsDiscreteValuationRing 𝒪K]
+    {𝒪 : Type*} [CommRing 𝒪] [IsDomain 𝒪] [IsDiscreteValuationRing 𝒪]
+    [Algebra 𝒪K 𝒪] [Module.Finite 𝒪K 𝒪] [FaithfulSMul 𝒪K 𝒪]
+    [IsLocalHom (algebraMap 𝒪K 𝒪)]
+
+/-- A uniformizer has zero residue. -/
+private lemma mono_residue_uniformizer_eq_zero {π : 𝒪} (hπ : Irreducible π) :
+    IsLocalRing.residue 𝒪 π = 0 := by  -- (extracted by Fuse golfer)
+  rw [IsLocalRing.residue_eq_zero_iff, mono_maximalIdeal_eq_span hπ]
+  exact Ideal.mem_span_singleton_self π
 
 omit [FaithfulSMul 𝒪K 𝒪] in
 /-- The residue extension `λ/κ` is module-finite. -/
@@ -121,8 +118,8 @@ theorem mono_adjoin_two_gen
         hξ_prim, IntermediateField.top_toSubalgebra]
     have hmem : IsLocalRing.residue 𝒪 c ∈
         Algebra.adjoin (IsLocalRing.ResidueField 𝒪K)
-          ({IsLocalRing.residue 𝒪 ξ} : Set (IsLocalRing.ResidueField 𝒪)) := by
-      rw [hAlgTop]; exact Algebra.mem_top
+          ({IsLocalRing.residue 𝒪 ξ} : Set (IsLocalRing.ResidueField 𝒪)) :=
+      hAlgTop ▸ Algebra.mem_top
     rw [Algebra.adjoin_singleton_eq_range_aeval] at hmem
     obtain ⟨p, hp⟩ := hmem
     have hsurj : Function.Surjective
@@ -131,11 +128,7 @@ theorem mono_adjoin_two_gen
       exact IsLocalRing.residue_surjective
     obtain ⟨q, hq⟩ := Polynomial.map_surjective _ hsurj p
     refine ⟨Polynomial.aeval ξ q, ?_, ?_⟩
-    · have h1 : Polynomial.aeval ξ q ∈ Algebra.adjoin 𝒪K ({ξ} : Set 𝒪) :=
-        Polynomial.aeval_mem_adjoin_singleton 𝒪K ξ
-      have hsub : ({ξ} : Set 𝒪) ⊆ ({ξ, π} : Set 𝒪) := by
-        intro y hy; rw [Set.mem_singleton_iff] at hy; subst hy; simp
-      exact (Algebra.adjoin_mono hsub) h1
+    · exact Algebra.adjoin_mono (by simp) (Polynomial.aeval_mem_adjoin_singleton 𝒪K ξ)
     · have hbeq : IsLocalRing.residue 𝒪 (Polynomial.aeval ξ q)
           = IsLocalRing.residue 𝒪 c := by
         rw [show Polynomial.aeval ξ q
@@ -215,14 +208,11 @@ theorem mono_newton_step
   classical
   set G : Polynomial 𝒪 := g.map (algebraMap 𝒪K 𝒪) with hG
   have hGx₀_mem : Polynomial.eval x₀ G ∈ IsLocalRing.maximalIdeal 𝒪 := by
-    rw [← IsLocalRing.residue_eq_zero_iff]
-    rw [hG, mono_residue_eval_lift g x₀, hroot]
+    rw [← IsLocalRing.residue_eq_zero_iff, hG, mono_residue_eval_lift g x₀, hroot]
   have hDeriv_unit : IsUnit (Polynomial.eval x₀ (Polynomial.derivative G)) := by
-    rw [← IsLocalRing.residue_ne_zero_iff_isUnit]
-    rw [hG, Polynomial.derivative_map,
+    rw [← IsLocalRing.residue_ne_zero_iff_isUnit, hG, Polynomial.derivative_map,
       mono_residue_eval_lift (Polynomial.derivative g) x₀]
-    rw [Polynomial.derivative_map] at hderiv
-    exact hderiv
+    rwa [Polynomial.derivative_map] at hderiv
   have hmem_span : Polynomial.eval x₀ G ∈ Ideal.span ({π} : Set 𝒪) := by
     rw [← mono_maximalIdeal_eq_span hπ]; exact hGx₀_mem
   rw [Ideal.mem_span_singleton] at hmem_span
@@ -236,11 +226,7 @@ theorem mono_newton_step
       rw [ht]; ring
     rw [this, hDinv, neg_one_mul]
   refine ⟨x₀ + π * t, ?_, ?_⟩
-  · rw [map_add, map_mul]
-    have : IsLocalRing.residue 𝒪 π = 0 := by
-      rw [IsLocalRing.residue_eq_zero_iff, mono_maximalIdeal_eq_span hπ]
-      exact Ideal.mem_span_singleton_self π
-    rw [this, zero_mul, add_zero]
+  · rw [map_add, map_mul, mono_residue_uniformizer_eq_zero hπ, zero_mul, add_zero]
   · obtain ⟨k, hk⟩ := Polynomial.binomExpansion G x₀ (π * t)
     have hcollapse :
         Polynomial.eval x₀ G
@@ -312,11 +298,7 @@ theorem mono_exists_primitive
     rw [hξ_res, hx₀]
   set θ : 𝒪 := ξ + π with hθ
   have hθ_res : IsLocalRing.residue 𝒪 θ = ξbar := by
-    rw [hθ, map_add, hξ_residue]
-    have : IsLocalRing.residue 𝒪 π = 0 := by
-      rw [IsLocalRing.residue_eq_zero_iff, mono_maximalIdeal_eq_span hπ]
-      exact Ideal.mem_span_singleton_self π
-    rw [this, add_zero]
+    rw [hθ, map_add, hξ_residue, mono_residue_uniformizer_eq_zero hπ, add_zero]
   have hθ_prim : IntermediateField.adjoin (IsLocalRing.ResidueField 𝒪K)
       ({IsLocalRing.residue 𝒪 θ} : Set (IsLocalRing.ResidueField 𝒪)) = ⊤ := by
     rw [hθ_res]; exact hξbar
@@ -343,12 +325,9 @@ theorem mono_exists_primitive
     rw [hD']
     ring
   have hu_unit : IsUnit u := by
-    rw [← IsLocalRing.residue_ne_zero_iff_isUnit, hu, map_add, map_mul]
-    have hπ_res : IsLocalRing.residue 𝒪 π = 0 := by
-      rw [IsLocalRing.residue_eq_zero_iff, mono_maximalIdeal_eq_span hπ]
-      exact Ideal.mem_span_singleton_self π
-    rw [hπ_res, zero_mul, add_zero, hD']
-    rw [IsLocalRing.residue_ne_zero_iff_isUnit]
+    rw [← IsLocalRing.residue_ne_zero_iff_isUnit, hu, map_add, map_mul,
+      mono_residue_uniformizer_eq_zero hπ, zero_mul, add_zero, hD',
+      IsLocalRing.residue_ne_zero_iff_isUnit]
     exact hDerivξ_unit
   have hϖ_irred : Irreducible (Polynomial.eval θ G) := by
     rw [hϖ_eq, irreducible_mul_isUnit hu_unit]

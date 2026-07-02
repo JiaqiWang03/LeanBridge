@@ -161,7 +161,7 @@ instance instIsDiscreteValuationRing :
   have hD : IsDedekindDomain (integralClosure ℤ_[p] K) := inferInstance
   exact ((IsDiscreteValuationRing.TFAE (integralClosure ℤ_[p] K) (notField p K)).out 2 0).mp hD
 
-private theorem isPrecomplete_of_finite_of_adicComplete
+lemma isPrecomplete_of_finite_of_adicComplete
     {R : Type*} [CommRing R] {I : Ideal R}
     {M : Type*} [AddCommGroup M] [Module R M]
     [Module.Finite R M] [IsAdicComplete I R] : IsPrecomplete I M := by
@@ -187,7 +187,7 @@ private theorem isPrecomplete_of_finite_of_adicComplete
       exact ⟨m₁ + m₂, by simp [hm₁, hm₂]⟩
   exact ⟨m, hm.symm⟩
 
-private theorem isAdicComplete_of_finite_of_adicComplete
+lemma isAdicComplete_of_finite_of_adicComplete
     {R : Type*} [CommRing R] {I : Ideal R}
     {M : Type*} [AddCommGroup M] [Module R M]
     [Module.Finite R M] [IsHausdorff I M] [IsAdicComplete I R] : IsAdicComplete I M where
@@ -490,7 +490,7 @@ N_{L/K}(𝔡_{L/K})` (`relNorm_differentIdeal_eq_span_discr`). Given that identi
 attribute [local instance] FractionRing.liftAlgebra
 
 /-- In a discrete valuation ring, `multiplicity 𝔪 (𝔪 ^ n) = n`. -/
-private theorem multiplicity_maximalIdeal_pow {R : Type*} [CommRing R] [IsDomain R]
+lemma multiplicity_maximalIdeal_pow {R : Type*} [CommRing R] [IsDomain R]
     [IsDiscreteValuationRing R] (n : ℕ) :
     multiplicity (IsLocalRing.maximalIdeal R) ((IsLocalRing.maximalIdeal R) ^ n) = n := by
   refine multiplicity_pow_self ?_ ?_ n
@@ -498,7 +498,7 @@ private theorem multiplicity_maximalIdeal_pow {R : Type*} [CommRing R] [IsDomain
   · exact Ideal.isUnit_iff.not.mpr (IsLocalRing.maximalIdeal.isMaximal R).ne_top
 
 /-- In a discrete valuation ring, a nonzero ideal is `𝔪 ^ (multiplicity 𝔪 I)`. -/
-private theorem eq_maximalIdeal_pow_multiplicity {R : Type*} [CommRing R] [IsDomain R]
+lemma eq_maximalIdeal_pow_multiplicity {R : Type*} [CommRing R] [IsDomain R]
     [IsDiscreteValuationRing R] {I : Ideal R} (hI : I ≠ ⊥) :
     I = (IsLocalRing.maximalIdeal R) ^ (multiplicity (IsLocalRing.maximalIdeal R) I) := by
   obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible R
@@ -528,19 +528,8 @@ theorem inertiaDeg_ne_zero : inertiaDeg K L ≠ 0 :=
   (Ideal.inertiaDeg_pos (IsLocalRing.maximalIdeal (𝒪 K))
     (IsLocalRing.maximalIdeal (𝒪 L))).ne'
 
-set_option maxHeartbeats 800000 in
-/-- **Bridge lemma (A), blueprint `prop:disc-eq-f-delta` core.** The relative
-"discriminant equals the norm of the different": `N_{L/K}(𝔡_{L/K}) = (disc(L/K))`
-as ideals of `𝒪_K`.
-
-Proof: monogenicity `𝒪_L = 𝒪_K[θ]` (`mono_exists_primitive`) unlocks Mathlib's
-single-generator different formula `conductor_mul_differentIdeal`, giving
-`𝔡_{L/K} = span {f'(θ)}` with `f = minpoly 𝒪_K θ`. Taking `relNorm`
-(`Ideal.relNorm_singleton`) turns this into `span {intNorm(f'(θ))}`, and the
-classical discriminant-derivative-norm identity descended from `K` to `𝒪_K`
-(`intNorm_deriv_minpoly_associated_discr`) together with basis-independence of the
-discriminant (`Algebra.discr_associated_of_basis`) identifies it with
-`span {disc(L/K)}`. -/
+/-- The relative "discriminant equals the norm of the different":
+  `N_{L/K}(𝔡_{L/K}) = (disc(L/K))` as ideals of `𝒪_K`.-/
 theorem relNorm_differentIdeal_eq_span_discr :
     Ideal.relNorm (𝒪 K) (differentIdeal (𝒪 K) (𝒪 L)) =
       Ideal.span {Algebra.discr (𝒪 K) ⇑(Module.Free.chooseBasis (𝒪 K) (𝒪 L))} := by
@@ -552,13 +541,11 @@ theorem relNorm_differentIdeal_eq_span_discr :
     Module.isTorsionFree_iff_algebraMap_injective.mpr
       (FaithfulSMul.algebraMap_injective (𝒪 K) (𝒪 L))
   haveI : IsScalarTower (𝒪 K) K L := IsScalarTower.of_algebraMap_eq fun _ => rfl
-  -- `algebraMap 𝒪_K → 𝒪_L` is local: `𝔪_K = comap 𝔪_L`.
   haveI hlh : IsLocalHom (algebraMap (𝒪 K) (𝒪 L)) := by
     have hcomap : Ideal.comap (algebraMap (𝒪 K) (𝒪 L))
         (IsLocalRing.maximalIdeal (𝒪 L)) = IsLocalRing.maximalIdeal (𝒪 K) :=
       Ideal.LiesOver.over.symm
     exact ((IsLocalRing.local_hom_TFAE (algebraMap (𝒪 K) (𝒪 L))).out 4 0).mp hcomap
-  -- residue extension is separable (finite residue fields are perfect).
   haveI : Algebra.IsSeparable (IsLocalRing.ResidueField (𝒪 K))
       (IsLocalRing.ResidueField (𝒪 L)) := by
     haveI : NeZero p := ⟨(Fact.out (p := p.Prime)).ne_zero⟩
@@ -571,23 +558,19 @@ theorem relNorm_differentIdeal_eq_span_discr :
     haveI : Algebra.IsAlgebraic (IsLocalRing.ResidueField (𝒪 K))
         (IsLocalRing.ResidueField (𝒪 L)) := Algebra.IsAlgebraic.of_finite _ _
     exact Algebra.IsAlgebraic.isSeparable_of_perfectField
-  -- monogenicity: `𝒪_L = 𝒪_K[θ]`.
   obtain ⟨θ, hθtop⟩ : ∃ θ : 𝒪 L, Algebra.adjoin (𝒪 K) ({θ} : Set (𝒪 L)) = ⊤ :=
     Neukirch.Chapter2.Sections8to10.mono_exists_primitive
   have hθ_int : IsIntegral (𝒪 K) θ := Algebra.IsIntegral.isIntegral θ
-  -- the integral power basis with generator `θ`.
   let e : ↥(Algebra.adjoin (𝒪 K) ({θ} : Set (𝒪 L))) ≃ₐ[𝒪 K] (𝒪 L) :=
     (Subalgebra.equivOfEq _ _ hθtop).trans Subalgebra.topEquiv
   let pb : PowerBasis (𝒪 K) (𝒪 L) := (Algebra.adjoin.powerBasis' hθ_int).map e
   have hpb_gen : pb.gen = θ := by
     show e (Algebra.adjoin.powerBasis' hθ_int).gen = θ
     rw [Algebra.adjoin.powerBasis'_gen]; rfl
-  -- generator viewed in `L`, its `K`-integrality and minimal polynomial.
   have hθL_int : IsIntegral K (algebraMap (𝒪 L) L θ) := Algebra.IsIntegral.isIntegral _
   have hmin : minpoly K (algebraMap (𝒪 L) L θ) =
       Polynomial.map (algebraMap (𝒪 K) K) (minpoly (𝒪 K) θ) :=
     minpoly.isIntegrallyClosed_eq_field_fractions K L hθ_int
-  -- degree bookkeeping: `deg f = [L:K]`.
   have hfdeg : (minpoly (𝒪 K) θ).natDegree = Module.finrank K L := by
     have h1 : pb.dim = (minpoly (𝒪 K) θ).natDegree := by
       show (Algebra.adjoin.powerBasis' hθ_int).dim = _
@@ -597,7 +580,6 @@ theorem relNorm_differentIdeal_eq_span_discr :
   have hdegK : (minpoly K (algebraMap (𝒪 L) L θ)).natDegree =
       (minpoly (𝒪 K) θ).natDegree := by
     rw [hmin, Polynomial.natDegree_map_eq_of_injective (IsFractionRing.injective (𝒪 K) K)]
-  -- `K⟮θ⟯ = ⊤`, the hypothesis of `conductor_mul_differentIdeal`.
   have hxK : Algebra.adjoin K {algebraMap (𝒪 L) L θ} = ⊤ := by
     have hsub : (Algebra.adjoin K {algebraMap (𝒪 L) L θ}).toSubmodule = ⊤ := by
       apply Submodule.eq_top_of_finrank_eq
@@ -606,7 +588,6 @@ theorem relNorm_differentIdeal_eq_span_discr :
         hdegK, hfdeg]
     have htop : (⊤ : Subalgebra K L).toSubmodule = (⊤ : Submodule K L) := by ext x; simp
     exact Subalgebra.toSubmodule_injective (hsub.trans htop.symm)
-  -- the conductor is trivial, so the different is `span {f'(θ)}`.
   have hcond : conductor (𝒪 K) θ = ⊤ := by
     rw [Ideal.eq_top_iff_one, mem_conductor_iff]
     intro b
@@ -616,7 +597,6 @@ theorem relNorm_differentIdeal_eq_span_discr :
       Ideal.span {Polynomial.aeval θ (Polynomial.derivative (minpoly (𝒪 K) θ))} := by
     have h := conductor_mul_differentIdeal (𝒪 K) K L θ hxK
     rwa [hcond, Ideal.top_mul] at h
-  -- discriminant = ± norm of the derivative (via the power basis), and basis independence.
   have hG2 := intNorm_deriv_minpoly_associated_discr (K := K) (L := L) pb
   rw [hpb_gen] at hG2
   have hG1 := Algebra.discr_associated_of_basis (R := 𝒪 K)
@@ -690,7 +670,7 @@ open IsLocalRing in
 /-- In this local (DVR) setting, the extension of the maximal ideal factors as a single
 prime power: `𝔪_K 𝒪_L = 𝔪_L ^ e`. Follows because every nonzero ideal of the DVR `𝒪_L`
 is a power of `𝔪_L`, and that exponent is the ramification index by definition. -/
-private theorem map_maximalIdeal_eq_pow_ramificationIdx :
+lemma map_maximalIdeal_eq_pow_ramificationIdx :
     (maximalIdeal (𝒪 K)).map (algebraMap (𝒪 K) (𝒪 L))
       = (maximalIdeal (𝒪 L)) ^ (ramificationIdx K L) := by
   have hP0 : maximalIdeal (𝒪 L) ≠ ⊥ := IsDiscreteValuationRing.not_a_field (𝒪 L)
@@ -711,42 +691,56 @@ private theorem map_maximalIdeal_eq_pow_ramificationIdx :
     exact (hstrict (Nat.lt_succ_self k)).2
   rw [hram]; exact hk
 
-set_option maxHeartbeats 500000 in
-open scoped nonZeroDivisors in
 open IsLocalRing in
-/-- Dedekind's different theorem (blueprint `thm:dedekind-different`): the different
-exponent satisfies `δ ≥ e - 1`, with equality exactly when `L / K` is tamely
-ramified (`p ∤ e`).
+/-- The ramification index of a `p`-adic extension is nonzero: if `e = 0` then
+`𝔪_K 𝒪_L = 𝒪_L`, contradicting `𝔪_K 𝒪_L ≤ 𝔪_L < 𝒪_L`. -/
+lemma ramificationIdx_ne_zero : NeZero (ramificationIdx K L) := by
+  refine ⟨fun h => ?_⟩
+  have hPe := map_maximalIdeal_eq_pow_ramificationIdx K L
+  rw [h, pow_zero, Ideal.one_eq_top] at hPe
+  have hle : (maximalIdeal (𝒪 K)).map (algebraMap (𝒪 K) (𝒪 L)) ≤ maximalIdeal (𝒪 L) := by
+    rw [Ideal.map_le_iff_le_comap]
+    exact le_of_eq (Ideal.LiesOver.over (p := maximalIdeal (𝒪 K)) (P := maximalIdeal (𝒪 L)))
+  rw [hPe] at hle
+  exact (IsLocalRing.maximalIdeal.isMaximal (𝒪 L)).ne_top (top_le_iff.mp hle)
 
-The lower bound `e - 1 ≤ δ` uses `𝔪_L ^ e ∣ 𝔪_K 𝒪_L` (by definition of the ramification
-index) and `Ideal.pow_sub_one_dvd_differentIdeal`. The sharp equivalence `δ = e - 1 ↔ p ∤ e`
-is the wild-ramification part of Dedekind's theorem, proved here via the residue-trace
-scaling `mk_{𝔪_K}(Tr x) = e · Tr_{k_L/k_K}(x̄)` (`DedekindTame.intTrace_residue_scaling`):
-in the tame case (`p ∤ e`) the residue trace is nonzero, giving `𝔪_L ^ e ∤ 𝔡` via
-`not_dvd_differentIdeal_of_intTrace_not_mem`; in the wild case (`p ∣ e`) all integral
-traces land in `𝔪_K`, giving `𝔡 ≤ 𝔪_L ^ e` via `differentialIdeal_le_fractionalIdeal_iff`
-and a uniformizer decomposition of `(𝔪_L ^ e)⁻¹`. -/
-theorem differentExponent_tame :
-    ramificationIdx K L - 1 ≤ differentExponent K L ∧
-      (differentExponent K L = ramificationIdx K L - 1 ↔ IsTamelyRamified K L) := by
+open IsLocalRing in
+/-- Lower bound of Dedekind's different theorem: `e - 1 ≤ δ`. Uses `𝔪_L ^ e ∣ 𝔪_K 𝒪_L`
+and `Ideal.pow_sub_one_dvd_differentIdeal`. -/
+lemma ramificationIdx_sub_one_le_differentExponent :
+    ramificationIdx K L - 1 ≤ differentExponent K L := by
   haveI : CharZero K := charZero_of_padicAlgebra p K
-  haveI hnzp : NeZero p := ⟨(Fact.out (p := p.Prime)).ne_zero⟩
-  have hP0 : maximalIdeal (𝒪 L) ≠ ⊥ := IsDiscreteValuationRing.not_a_field (𝒪 L)
+  haveI : Algebra.IsSeparable (FractionRing (𝒪 K)) (FractionRing (𝒪 L)) :=
+    separable_fractionRing K L
+  have hmK : maximalIdeal (𝒪 K) ≠ ⊥ := IsDiscreteValuationRing.not_a_field (𝒪 K)
   have hd : differentIdeal (𝒪 K) (𝒪 L) ≠ ⊥ := differentIdeal_ne_bot
   have hfin : FiniteMultiplicity (maximalIdeal (𝒪 L)) (differentIdeal (𝒪 K) (𝒪 L)) :=
     FiniteMultiplicity.of_not_isUnit
       (Ideal.isUnit_iff.not.mpr (IsLocalRing.maximalIdeal.isMaximal (𝒪 L)).ne_top)
       (by rw [Ideal.zero_eq_bot]; exact hd)
+  have hdvd : (maximalIdeal (𝒪 L)) ^ (ramificationIdx K L) ∣
+      (maximalIdeal (𝒪 K)).map (algebraMap (𝒪 K) (𝒪 L)) :=
+    Ideal.dvd_iff_le.mpr Ideal.le_pow_ramificationIdx
+  have hdvd' : (maximalIdeal (𝒪 L)) ^ (ramificationIdx K L - 1) ∣
+      differentIdeal (𝒪 K) (𝒪 L) :=
+    pow_sub_one_dvd_differentIdeal (P := maximalIdeal (𝒪 L)) (e := ramificationIdx K L)
+      (hp := hmK) (hP := hdvd)
+  exact hfin.le_multiplicity_of_pow_dvd hdvd'
+
+open IsLocalRing in
+/-- Wild residue-trace fact: when `p ∣ e`, every integral trace lands in `𝔪_K`.
+Uses the residue-trace scaling `mk(Tr x) = e • Tr_{k_L/k_K}(x̄)` and `e = 0` in
+characteristic `p`. -/
+lemma intTrace_mem_maximalIdeal_of_dvd_ramificationIdx
+    (hdvd : (p : ℕ) ∣ ramificationIdx K L) :
+    ∀ b : 𝒪 L, Algebra.intTrace (𝒪 K) (𝒪 L) b ∈ IsLocalRing.maximalIdeal (𝒪 K) := by
+  haveI : CharZero K := charZero_of_padicAlgebra p K
+  haveI : Algebra.IsSeparable (FractionRing (𝒪 K)) (FractionRing (𝒪 L)) :=
+    separable_fractionRing K L
+  haveI hnzp : NeZero p := ⟨(Fact.out (p := p.Prime)).ne_zero⟩
+  have hP0 : maximalIdeal (𝒪 L) ≠ ⊥ := IsDiscreteValuationRing.not_a_field (𝒪 L)
   have hPe := map_maximalIdeal_eq_pow_ramificationIdx K L
-  have hle : (maximalIdeal (𝒪 K)).map (algebraMap (𝒪 K) (𝒪 L)) ≤ maximalIdeal (𝒪 L) := by
-    rw [Ideal.map_le_iff_le_comap]
-    exact le_of_eq (Ideal.LiesOver.over (p := maximalIdeal (𝒪 K)) (P := maximalIdeal (𝒪 L)))
-  haveI hene : NeZero (ramificationIdx K L) := by
-    refine ⟨fun h => ?_⟩
-    have hPe' := hPe
-    rw [h, pow_zero, Ideal.one_eq_top] at hPe'
-    rw [hPe'] at hle
-    exact (IsLocalRing.maximalIdeal.isMaximal (𝒪 L)).ne_top (top_le_iff.mp hle)
+  haveI hene : NeZero (ramificationIdx K L) := ramificationIdx_ne_zero K L
   haveI hene2 : NeZero (Ideal.ramificationIdx (R := 𝒪 K) (S := 𝒪 L)
     (maximalIdeal (𝒪 K)) (maximalIdeal (𝒪 L))) := hene
   haveI hfinK : Finite (IsLocalRing.ResidueField (𝒪 K)) := by
@@ -757,6 +751,8 @@ theorem differentExponent_tame :
     haveI : Finite (IsLocalRing.ResidueField ℤ_[p]) :=
       Finite.of_equiv _ (PadicInt.residueField (p := p)).symm.toEquiv
     exact IsLocalRing.ResidueField.finite_of_finite (R := ℤ_[p]) (S := 𝒪 L) inferInstance
+  haveI hmaxK : (maximalIdeal (𝒪 K)).IsMaximal := IsLocalRing.maximalIdeal.isMaximal (𝒪 K)
+  haveI hmaxL : (maximalIdeal (𝒪 L)).IsMaximal := IsLocalRing.maximalIdeal.isMaximal (𝒪 L)
   letI : Field (𝒪 K ⧸ maximalIdeal (𝒪 K)) := Ideal.Quotient.field _
   letI : Field (𝒪 L ⧸ maximalIdeal (𝒪 L)) := Ideal.Quotient.field _
   haveI : Finite (𝒪 K ⧸ maximalIdeal (𝒪 K)) := hfinK
@@ -778,89 +774,201 @@ theorem differentExponent_tame :
       Ideal.Quotient.eq_zero_iff_mem, IsLocalRing.mem_maximalIdeal, mem_nonunits_iff]
     intro hu
     rw [show (p : 𝒪 K) = algebraMap ℤ_[p] (𝒪 K) (p : ℤ_[p]) from (map_natCast _ p).symm] at hu
+    have hunit : IsUnit (p : ℤ_[p]) := IsLocalHom.map_nonunit _ hu
     have hmem : (p : ℤ_[p]) ∈ IsLocalRing.maximalIdeal ℤ_[p] := by
       rw [PadicInt.maximalIdeal_eq_span_p]; exact Ideal.mem_span_singleton_self _
-    exact ((IsLocalRing.mem_maximalIdeal _).mp hmem) (IsLocalHom.map_nonunit _ hu)
+    exact ((IsLocalRing.mem_maximalIdeal _).mp hmem) hunit
   have hcore := fun x => DedekindTame.intTrace_residue_scaling
     (p := maximalIdeal (𝒪 K)) (P := maximalIdeal (𝒪 L)) x hP0 hPe
-  refine ⟨hfin.le_multiplicity_of_pow_dvd (pow_sub_one_dvd_differentIdeal (P := maximalIdeal (𝒪 L)) (e := ramificationIdx K L)
-        (hp := IsDiscreteValuationRing.not_a_field (𝒪 K))
-        (hP := Ideal.dvd_iff_le.mpr Ideal.le_pow_ramificationIdx)), ?_, ?_⟩
-  · intro hδ
-    by_contra htame'
-    rw [IsTamelyRamified, not_not] at htame'
-    have hmem : ∀ b : 𝒪 L, Algebra.intTrace (𝒪 K) (𝒪 L) b ∈ maximalIdeal (𝒪 K) := by
-      intro b
-      rw [← Ideal.Quotient.eq_zero_iff_mem, hcore b, nsmul_eq_mul]
-      apply mul_eq_zero_of_left
-      rw [CharP.cast_eq_zero_iff (𝒪 K ⧸ maximalIdeal (𝒪 K)) p]
-      exact htame'
-    obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible (𝒪 K)
-    have hspan : maximalIdeal (𝒪 K) = Ideal.span {ϖ} := hϖ.maximalIdeal_eq
-    have hϖne : (algebraMap (𝒪 K) K) ϖ ≠ 0 :=
-      (map_ne_zero_iff _ (IsFractionRing.injective (𝒪 K) K)).mpr hϖ.ne_zero
-    have hIne : (↑(maximalIdeal (𝒪 L) ^ ramificationIdx K L) : FractionalIdeal (𝒪 L)⁰ L) ≠ 0 :=
-      FractionalIdeal.coeIdeal_ne_zero.mpr (pow_ne_zero _ hP0)
-    have hle_id : differentIdeal (𝒪 K) (𝒪 L) ≤ maximalIdeal (𝒪 L) ^ ramificationIdx K L := by
-      rw [← FractionalIdeal.coeIdeal_le_coeIdeal L,
-        differentialIdeal_le_fractionalIdeal_iff (K := K) (L := L) hIne,
-        Submodule.map_le_iff_le_comap]
-      intro z hz
-      rw [Submodule.restrictScalars_mem] at hz
-      rw [Submodule.mem_comap, LinearMap.restrictScalars_apply]
-      have hyϖmem : algebraMap (𝒪 L) L (algebraMap (𝒪 K) (𝒪 L) ϖ) ∈
-          (↑(maximalIdeal (𝒪 L) ^ ramificationIdx K L) : FractionalIdeal (𝒪 L)⁰ L) := by
-        rw [FractionalIdeal.mem_coeIdeal]
-        refine ⟨algebraMap (𝒪 K) (𝒪 L) ϖ, ?_, rfl⟩
-        rw [← hPe]
-        exact Ideal.mem_map_of_mem _ (hspan ▸ Ideal.mem_span_singleton_self ϖ)
-      obtain ⟨c₀, hc₀⟩ := (FractionalIdeal.mem_one_iff _).mp
-        ((FractionalIdeal.mem_inv_iff hIne).mp hz _ hyϖmem)
-      have htower : algebraMap (𝒪 L) L (algebraMap (𝒪 K) (𝒪 L) ϖ)
-          = algebraMap K L (algebraMap (𝒪 K) K ϖ) := by
-        rw [← IsScalarTower.algebraMap_apply (𝒪 K) (𝒪 L) L,
-          ← IsScalarTower.algebraMap_apply (𝒪 K) K L]
-      rw [htower] at hc₀
-      obtain ⟨d, hd⟩ := Ideal.mem_span_singleton.mp (hspan ▸ hmem c₀)
-      rw [Submodule.mem_one]
-      exact ⟨d, (mul_left_cancel₀ hϖne (by
+  intro b
+  rw [← Ideal.Quotient.eq_zero_iff_mem, hcore b, nsmul_eq_mul]
+  apply mul_eq_zero_of_left
+  rw [CharP.cast_eq_zero_iff (𝒪 K ⧸ maximalIdeal (𝒪 K)) p]
+  exact hdvd
+
+open IsLocalRing in
+/-- Tame residue-trace fact: when `p ∤ e`, some integral trace avoids `𝔪_K`.
+Uses surjectivity of the residue trace and `e ≠ 0` in characteristic `p`. -/
+lemma exists_intTrace_not_mem_maximalIdeal_of_not_dvd
+    (htame : IsTamelyRamified K L) :
+    ∃ x : 𝒪 L, Algebra.intTrace (𝒪 K) (𝒪 L) x ∉ IsLocalRing.maximalIdeal (𝒪 K) := by
+  haveI : CharZero K := charZero_of_padicAlgebra p K
+  haveI : Algebra.IsSeparable (FractionRing (𝒪 K)) (FractionRing (𝒪 L)) :=
+    separable_fractionRing K L
+  haveI hnzp : NeZero p := ⟨(Fact.out (p := p.Prime)).ne_zero⟩
+  have hP0 : maximalIdeal (𝒪 L) ≠ ⊥ := IsDiscreteValuationRing.not_a_field (𝒪 L)
+  have hPe := map_maximalIdeal_eq_pow_ramificationIdx K L
+  haveI hene : NeZero (ramificationIdx K L) := ramificationIdx_ne_zero K L
+  haveI hene2 : NeZero (Ideal.ramificationIdx (R := 𝒪 K) (S := 𝒪 L)
+    (maximalIdeal (𝒪 K)) (maximalIdeal (𝒪 L))) := hene
+  haveI hfinK : Finite (IsLocalRing.ResidueField (𝒪 K)) := by
+    haveI : Finite (IsLocalRing.ResidueField ℤ_[p]) :=
+      Finite.of_equiv _ (PadicInt.residueField (p := p)).symm.toEquiv
+    exact IsLocalRing.ResidueField.finite_of_finite (R := ℤ_[p]) (S := 𝒪 K) inferInstance
+  haveI hfinL : Finite (IsLocalRing.ResidueField (𝒪 L)) := by
+    haveI : Finite (IsLocalRing.ResidueField ℤ_[p]) :=
+      Finite.of_equiv _ (PadicInt.residueField (p := p)).symm.toEquiv
+    exact IsLocalRing.ResidueField.finite_of_finite (R := ℤ_[p]) (S := 𝒪 L) inferInstance
+  haveI hmaxK : (maximalIdeal (𝒪 K)).IsMaximal := IsLocalRing.maximalIdeal.isMaximal (𝒪 K)
+  haveI hmaxL : (maximalIdeal (𝒪 L)).IsMaximal := IsLocalRing.maximalIdeal.isMaximal (𝒪 L)
+  letI : Field (𝒪 K ⧸ maximalIdeal (𝒪 K)) := Ideal.Quotient.field _
+  letI : Field (𝒪 L ⧸ maximalIdeal (𝒪 L)) := Ideal.Quotient.field _
+  haveI : Finite (𝒪 K ⧸ maximalIdeal (𝒪 K)) := hfinK
+  haveI : Finite (𝒪 L ⧸ maximalIdeal (𝒪 L)) := hfinL
+  letI hAlg : Algebra (𝒪 K ⧸ maximalIdeal (𝒪 K)) (𝒪 L ⧸ maximalIdeal (𝒪 L)) :=
+    Ideal.Quotient.algebraQuotientOfRamificationIdxNeZero
+      (maximalIdeal (𝒪 K)) (maximalIdeal (𝒪 L))
+  letI : Module (𝒪 K ⧸ maximalIdeal (𝒪 K)) (𝒪 L ⧸ maximalIdeal (𝒪 L)) := hAlg.toModule
+  haveI : Module.Finite (𝒪 K ⧸ maximalIdeal (𝒪 K)) (𝒪 L ⧸ maximalIdeal (𝒪 L)) :=
+    Module.Finite.of_finite
+  haveI : Algebra.IsAlgebraic (𝒪 K ⧸ maximalIdeal (𝒪 K)) (𝒪 L ⧸ maximalIdeal (𝒪 L)) :=
+    Algebra.IsAlgebraic.of_finite _ _
+  haveI : PerfectField (𝒪 K ⧸ maximalIdeal (𝒪 K)) := inferInstance
+  haveI hsep : Algebra.IsSeparable (𝒪 K ⧸ maximalIdeal (𝒪 K)) (𝒪 L ⧸ maximalIdeal (𝒪 L)) :=
+    Algebra.IsAlgebraic.isSeparable_of_perfectField
+  haveI hcharK : CharP (𝒪 K ⧸ maximalIdeal (𝒪 K)) p := by
+    refine (CharP.charP_iff_prime_eq_zero (Fact.out (p := p.Prime))).mpr ?_
+    rw [← map_natCast (Ideal.Quotient.mk (maximalIdeal (𝒪 K))) p,
+      Ideal.Quotient.eq_zero_iff_mem, IsLocalRing.mem_maximalIdeal, mem_nonunits_iff]
+    intro hu
+    rw [show (p : 𝒪 K) = algebraMap ℤ_[p] (𝒪 K) (p : ℤ_[p]) from (map_natCast _ p).symm] at hu
+    have hunit : IsUnit (p : ℤ_[p]) := IsLocalHom.map_nonunit _ hu
+    have hmem : (p : ℤ_[p]) ∈ IsLocalRing.maximalIdeal ℤ_[p] := by
+      rw [PadicInt.maximalIdeal_eq_span_p]; exact Ideal.mem_span_singleton_self _
+    exact ((IsLocalRing.mem_maximalIdeal _).mp hmem) hunit
+  have hcore := fun x => DedekindTame.intTrace_residue_scaling
+    (p := maximalIdeal (𝒪 K)) (P := maximalIdeal (𝒪 L)) x hP0 hPe
+  obtain ⟨y, hy⟩ := Algebra.trace_surjective
+    (K := 𝒪 K ⧸ maximalIdeal (𝒪 K)) (L := 𝒪 L ⧸ maximalIdeal (𝒪 L)) 1
+  obtain ⟨x, hx⟩ := Ideal.Quotient.mk_surjective y
+  have htr : (Ideal.Quotient.mk (maximalIdeal (𝒪 K)))
+      (Algebra.intTrace (𝒪 K) (𝒪 L) x) ≠ 0 := by
+    rw [hcore x, hx, hy, nsmul_eq_mul, mul_one, ne_eq,
+      CharP.cast_eq_zero_iff (𝒪 K ⧸ maximalIdeal (𝒪 K)) p]
+    exact htame
+  exact ⟨x, by rw [← Ideal.Quotient.eq_zero_iff_mem]; exact htr⟩
+
+open scoped nonZeroDivisors in
+open IsLocalRing in
+/-- Wild case of Dedekind's different theorem: when `p ∣ e`, `e ≤ δ` (so the lower
+bound `e - 1 ≤ δ` is not sharp). Proved via `𝔡 ≤ 𝔪_L ^ e`, obtained from
+`differentialIdeal_le_fractionalIdeal_iff` and a uniformizer decomposition of
+`(𝔪_L ^ e)⁻¹`, using that all integral traces land in `𝔪_K`. -/
+lemma ramificationIdx_le_differentExponent_of_dvd
+    (hdvd : (p : ℕ) ∣ ramificationIdx K L) :
+    ramificationIdx K L ≤ differentExponent K L := by
+  haveI : CharZero K := charZero_of_padicAlgebra p K
+  haveI : Algebra.IsSeparable (FractionRing (𝒪 K)) (FractionRing (𝒪 L)) :=
+    separable_fractionRing K L
+  have hP0 : maximalIdeal (𝒪 L) ≠ ⊥ := IsDiscreteValuationRing.not_a_field (𝒪 L)
+  have hd : differentIdeal (𝒪 K) (𝒪 L) ≠ ⊥ := differentIdeal_ne_bot
+  have hfin : FiniteMultiplicity (maximalIdeal (𝒪 L)) (differentIdeal (𝒪 K) (𝒪 L)) :=
+    FiniteMultiplicity.of_not_isUnit
+      (Ideal.isUnit_iff.not.mpr (IsLocalRing.maximalIdeal.isMaximal (𝒪 L)).ne_top)
+      (by rw [Ideal.zero_eq_bot]; exact hd)
+  have hPe := map_maximalIdeal_eq_pow_ramificationIdx K L
+  have hmem : ∀ b : 𝒪 L, Algebra.intTrace (𝒪 K) (𝒪 L) b ∈ maximalIdeal (𝒪 K) :=
+    intTrace_mem_maximalIdeal_of_dvd_ramificationIdx K L hdvd
+  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible (𝒪 K)
+  have hspan : maximalIdeal (𝒪 K) = Ideal.span {ϖ} := hϖ.maximalIdeal_eq
+  have hϖne : (algebraMap (𝒪 K) K) ϖ ≠ 0 :=
+    (map_ne_zero_iff _ (IsFractionRing.injective (𝒪 K) K)).mpr hϖ.ne_zero
+  have hIne : (↑(maximalIdeal (𝒪 L) ^ ramificationIdx K L) : FractionalIdeal (𝒪 L)⁰ L) ≠ 0 :=
+    FractionalIdeal.coeIdeal_ne_zero.mpr (pow_ne_zero _ hP0)
+  haveI : Algebra.IsAlgebraic K L := Algebra.IsAlgebraic.of_finite K L
+  haveI : Algebra.IsSeparable K L := Algebra.IsAlgebraic.isSeparable_of_perfectField
+  have hle_id : differentIdeal (𝒪 K) (𝒪 L) ≤ maximalIdeal (𝒪 L) ^ ramificationIdx K L := by
+    rw [← FractionalIdeal.coeIdeal_le_coeIdeal L,
+      differentialIdeal_le_fractionalIdeal_iff (K := K) (L := L) hIne,
+      Submodule.map_le_iff_le_comap]
+    intro z hz
+    rw [Submodule.restrictScalars_mem] at hz
+    rw [Submodule.mem_comap, LinearMap.restrictScalars_apply]
+    have hyϖmem : algebraMap (𝒪 L) L (algebraMap (𝒪 K) (𝒪 L) ϖ) ∈
+        (↑(maximalIdeal (𝒪 L) ^ ramificationIdx K L) : FractionalIdeal (𝒪 L)⁰ L) := by
+      rw [FractionalIdeal.mem_coeIdeal]
+      refine ⟨algebraMap (𝒪 K) (𝒪 L) ϖ, ?_, rfl⟩
+      rw [← hPe]
+      exact Ideal.mem_map_of_mem _ (hspan ▸ Ideal.mem_span_singleton_self ϖ)
+    obtain ⟨c₀, hc₀⟩ := (FractionalIdeal.mem_one_iff _).mp
+      ((FractionalIdeal.mem_inv_iff hIne).mp hz _ hyϖmem)
+    have htower : algebraMap (𝒪 L) L (algebraMap (𝒪 K) (𝒪 L) ϖ)
+        = algebraMap K L (algebraMap (𝒪 K) K ϖ) := by
+      rw [← IsScalarTower.algebraMap_apply (𝒪 K) (𝒪 L) L,
+        ← IsScalarTower.algebraMap_apply (𝒪 K) K L]
+    rw [htower] at hc₀
+    obtain ⟨d, hd⟩ := Ideal.mem_span_singleton.mp (hspan ▸ hmem c₀)
+    have hkey : (algebraMap (𝒪 K) K ϖ) * Algebra.trace K L z
+        = (algebraMap (𝒪 K) K ϖ) * algebraMap (𝒪 K) K d := by
+      have h1 : Algebra.trace K L (z * algebraMap K L (algebraMap (𝒪 K) K ϖ))
+          = (algebraMap (𝒪 K) K ϖ) * Algebra.trace K L z := by
+        rw [mul_comm z, ← Algebra.smul_def, map_smul, smul_eq_mul]
       have h2 : Algebra.trace K L (z * algebraMap K L (algebraMap (𝒪 K) K ϖ))
           = algebraMap (𝒪 K) K (Algebra.intTrace (𝒪 K) (𝒪 L) c₀) := by
         rw [← hc₀]; exact (Algebra.algebraMap_intTrace c₀).symm
-      rw [show Algebra.trace K L (z * algebraMap K L (algebraMap (𝒪 K) K ϖ))
-            = (algebraMap (𝒪 K) K ϖ) * Algebra.trace K L z from by
-          rw [mul_comm z, ← Algebra.smul_def, map_smul, smul_eq_mul]] at h2
-      rw [h2, hd, map_mul])).symm⟩
-    have hple : ramificationIdx K L ≤ differentExponent K L :=
-      hfin.pow_dvd_iff_le_multiplicity.mp (Ideal.dvd_iff_le.mpr hle_id)
+      rw [h1] at h2
+      rw [h2, hd, map_mul]
+    rw [Submodule.mem_one]
+    exact ⟨d, (mul_left_cancel₀ hϖne hkey).symm⟩
+  exact hfin.pow_dvd_iff_le_multiplicity.mp (Ideal.dvd_iff_le.mpr hle_id)
+
+open IsLocalRing in
+/-- Tame case of Dedekind's different theorem: when `p ∤ e`, `δ < e`, hence the lower
+bound `e - 1 ≤ δ` is an equality. Proved via `𝔪_L ^ e ∤ 𝔡`, from
+`not_dvd_differentIdeal_of_intTrace_not_mem` applied to an integral trace avoiding `𝔪_K`. -/
+lemma differentExponent_lt_ramificationIdx_of_not_dvd
+    (htame : IsTamelyRamified K L) :
+    differentExponent K L < ramificationIdx K L := by
+  haveI : CharZero K := charZero_of_padicAlgebra p K
+  haveI : Algebra.IsSeparable (FractionRing (𝒪 K)) (FractionRing (𝒪 L)) :=
+    separable_fractionRing K L
+  have hd : differentIdeal (𝒪 K) (𝒪 L) ≠ ⊥ := differentIdeal_ne_bot
+  have hfin : FiniteMultiplicity (maximalIdeal (𝒪 L)) (differentIdeal (𝒪 K) (𝒪 L)) :=
+    FiniteMultiplicity.of_not_isUnit
+      (Ideal.isUnit_iff.not.mpr (IsLocalRing.maximalIdeal.isMaximal (𝒪 L)).ne_top)
+      (by rw [Ideal.zero_eq_bot]; exact hd)
+  have hPe := map_maximalIdeal_eq_pow_ramificationIdx K L
+  obtain ⟨x, hnotmem⟩ := exists_intTrace_not_mem_maximalIdeal_of_not_dvd K L htame
+  have hPmul : (maximalIdeal (𝒪 L)) ^ (ramificationIdx K L) * (⊤ : Ideal (𝒪 L))
+      = Ideal.map (algebraMap (𝒪 K) (𝒪 L)) (maximalIdeal (𝒪 K)) := by
+    rw [Ideal.mul_top]; exact hPe.symm
+  have hndvd : ¬ (maximalIdeal (𝒪 L)) ^ (ramificationIdx K L) ∣
+      differentIdeal (𝒪 K) (𝒪 L) :=
+    not_dvd_differentIdeal_of_intTrace_not_mem
+      (P := maximalIdeal (𝒪 L) ^ ramificationIdx K L) (Q := ⊤)
+      (hP := hPmul) (x := x) (hxQ := Submodule.mem_top) (hx := hnotmem)
+  by_contra hle2
+  push Not at hle2
+  exact hndvd (hfin.pow_dvd_iff_le_multiplicity.mpr hle2)
+
+open IsLocalRing in
+/-- Dedekind's different theorem (blueprint `thm:dedekind-different`): the different
+exponent satisfies `δ ≥ e - 1`, with equality exactly when `L / K` is tamely
+ramified (`p ∤ e`).
+
+The lower bound `e - 1 ≤ δ` uses `𝔪_L ^ e ∣ 𝔪_K 𝒪_L` (by definition of the ramification
+index) and `Ideal.pow_sub_one_dvd_differentIdeal`. The sharp equivalence `δ = e - 1 ↔ p ∤ e`
+is the wild-ramification part of Dedekind's theorem, proved here via the residue-trace
+scaling `mk_{𝔪_K}(Tr x) = e · Tr_{k_L/k_K}(x̄)` (`DedekindTame.intTrace_residue_scaling`):
+in the tame case (`p ∤ e`) the residue trace is nonzero, giving `𝔪_L ^ e ∤ 𝔡` via
+`not_dvd_differentIdeal_of_intTrace_not_mem`; in the wild case (`p ∣ e`) all integral
+traces land in `𝔪_K`, giving `𝔡 ≤ 𝔪_L ^ e` via `differentialIdeal_le_fractionalIdeal_iff`
+and a uniformizer decomposition of `(𝔪_L ^ e)⁻¹`. -/
+theorem differentExponent_tame :
+    ramificationIdx K L - 1 ≤ differentExponent K L ∧
+      (differentExponent K L = ramificationIdx K L - 1 ↔ IsTamelyRamified K L) := by
+  have hge := ramificationIdx_sub_one_le_differentExponent K L
+  haveI hene : NeZero (ramificationIdx K L) := ramificationIdx_ne_zero K L
+  refine ⟨hge, ?_, ?_⟩
+  · intro hδ
+    by_contra htame'
+    rw [IsTamelyRamified, not_not] at htame'
+    have hple := ramificationIdx_le_differentExponent_of_dvd K L htame'
     have he1 : 1 ≤ ramificationIdx K L := Nat.one_le_iff_ne_zero.mpr hene.out
     omega
   · intro htame
-    obtain ⟨y, hy⟩ := Algebra.trace_surjective
-      (K := 𝒪 K ⧸ maximalIdeal (𝒪 K)) (L := 𝒪 L ⧸ maximalIdeal (𝒪 L)) 1
-    obtain ⟨x, hx⟩ := Ideal.Quotient.mk_surjective y
-    have htr : (Ideal.Quotient.mk (maximalIdeal (𝒪 K)))
-        (Algebra.intTrace (𝒪 K) (𝒪 L) x) ≠ 0 := by
-      rw [hcore x, hx, hy, nsmul_eq_mul, mul_one, ne_eq,
-        CharP.cast_eq_zero_iff (𝒪 K ⧸ maximalIdeal (𝒪 K)) p]
-      exact htame
-    have hnotmem : Algebra.intTrace (𝒪 K) (𝒪 L) x ∉ maximalIdeal (𝒪 K) := by
-      rw [← Ideal.Quotient.eq_zero_iff_mem]; exact htr
-    have hPmul : (maximalIdeal (𝒪 L)) ^ (ramificationIdx K L) * (⊤ : Ideal (𝒪 L))
-        = Ideal.map (algebraMap (𝒪 K) (𝒪 L)) (maximalIdeal (𝒪 K)) := by
-      rw [Ideal.mul_top]; exact hPe.symm
-    have hndvd : ¬ (maximalIdeal (𝒪 L)) ^ (ramificationIdx K L) ∣
-        differentIdeal (𝒪 K) (𝒪 L) :=
-      not_dvd_differentIdeal_of_intTrace_not_mem
-        (P := maximalIdeal (𝒪 L) ^ ramificationIdx K L) (Q := ⊤)
-        (hP := hPmul) (x := x) (hxQ := Submodule.mem_top) (hx := hnotmem)
-    have hlt : differentExponent K L < ramificationIdx K L := by
-      by_contra hle2
-      push Not at hle2
-      exact hndvd (hfin.pow_dvd_iff_le_multiplicity.mpr hle2)
-    exact le_antisymm (Nat.le_pred_of_lt hlt) (hfin.le_multiplicity_of_pow_dvd (pow_sub_one_dvd_differentIdeal (P := maximalIdeal (𝒪 L)) (e := ramificationIdx K L)
-        (hp := IsDiscreteValuationRing.not_a_field (𝒪 K))
-        (hP := Ideal.dvd_iff_le.mpr Ideal.le_pow_ramificationIdx)))
+    have hlt := differentExponent_lt_ramificationIdx_of_not_dvd K L htame
+    exact le_antisymm (Nat.le_pred_of_lt hlt) hge
 
 /-- The discriminant exponent vanishes exactly when `L / K` is unramified
 (blueprint `thm:disc-zero-iff-unramified`): `d = 0 ↔ e = 1`. -/
