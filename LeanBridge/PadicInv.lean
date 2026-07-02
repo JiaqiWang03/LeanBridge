@@ -314,6 +314,16 @@ def IsTamelyRamified : Prop := ¬ (p : ℕ) ∣ ramificationIdx K L
 /-- `L / K` is *wildly ramified* when `p ∣ e` (blueprint `def:tame-wild`). -/
 def IsWildlyRamified : Prop := (p : ℕ) ∣ ramificationIdx K L
 
+/-- The *wild ramification exponent* `w` of `L / K` (blueprint `def:tame-wild`): the
+exponent of `p` in `e`, i.e. `e = p ^ w · e_tame` with `p ∤ e_tame`. Concretely the
+`p`-adic valuation of the ramification index. -/
+def wildRamificationExponent : ℕ := padicValNat p (ramificationIdx K L)
+
+/-- The *tame ramification index* `e_tame` of `L / K` (blueprint `def:tame-wild`): the
+prime-to-`p` part of `e`, so that `e = p ^ w · e_tame`. -/
+def tameRamificationIndex : ℕ :=
+  ramificationIdx K L / p ^ wildRamificationExponent K L
+
 /-!
 ### The residue degree and the identity `e * f = [L : K]` (blueprint §1.4)
 -/
