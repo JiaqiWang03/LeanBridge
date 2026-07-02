@@ -4,44 +4,6 @@ namespace Neukirch.Chapter2.Sections8to10
 
 open scoped WithZero
 
-/-!
-# §10 Monogenicity — Neukirch II.10.4 (streamlined)
-
-Goal of this file: the single-generator monogenicity theorem
-`mono_exists_primitive`:
-
-  under a finite DVR extension `𝒪K → 𝒪` with **separable** residue extension
-  `λ/κ`, there is `θ : 𝒪` with `Algebra.adjoin 𝒪K {θ} = ⊤`, i.e. `𝒪 = 𝒪K[θ]`.
-
-## Why this is short
-
-The previous development proved, as a milestone, that the monomials
-`{ξ^j π^k : j<f, k<e}` form a `κ`-*basis* of `Q = 𝒪 ⧸ 𝔪K·𝒪` (graded-piece
-isomorphisms, short exact sequences, `Basis.sumQuot`, an `e·f` count, …).  The
-main theorem never consumes any of that: it is a purely *generative* statement
-(`adjoin = ⊤`), and the two-generator step reaches it through **Nakayama**,
-which only needs the monomials to *span* `Q`, not to be independent.
-
-So instead of building a basis we run one filtration induction
-
-  `P n :  ∀ a, ∃ b ∈ A, a - b ∈ 𝔪^n`,   `A := 𝒪K[ξ, π]`,
-
-whose only genuine content is the residue-field fact `A + 𝔪 = 𝒪`
-(`hbase`).  At `n = e` (where `𝔪K·𝒪 = 𝔪^e`) this is exactly the Nakayama
-hypothesis `IsLocalRing.map_mkQ_eq_top`, giving `A = ⊤`.
-
-Imports only `Mathlib`; no `sorry`.
-
-Structure:
-* M1  — DVR/ramification bedrock (`𝔪 = (π)`, `e`, `𝔪K·𝒪 = 𝔪^e`).
-* bridge — residue/`eval`/`map` plumbing shared by both later steps.
-* two-gen — `𝒪 = 𝒪K[ξ, π]` via the filtration induction + Nakayama.
-* Newton — one Newton step in a local ring (no completeness).
-* main — `∃ θ, 𝒪 = 𝒪K[θ]`.
--/
-
-/-! ## M1 — DVR / ramification bedrock -/
-
 /-- A uniformizer `π` (`Irreducible π`) of the DVR `𝒪` generates `𝔪`. -/
 theorem mono_maximalIdeal_eq_span
     {𝒪 : Type*} [CommRing 𝒪] [IsDomain 𝒪]
@@ -135,13 +97,7 @@ theorem mono_residue_eval_lift (g : Polynomial 𝒪K) (x : 𝒪) :
       (p := g.map (algebraMap 𝒪K 𝒪)) x, hmaps]
 
 /-- **Two-generator monogenicity.**  With `π` a uniformizer and `ξ` any lift of
-a primitive element `ξ̄` of `λ/κ`, `𝒪K[ξ, π] = 𝒪`.
-
-Proof: let `A := 𝒪K[ξ, π]`.  The residue-field fact `hbase` says every `c : 𝒪`
-is congruent mod `𝔪` to some element of `A`.  A filtration induction lifts this
-to: every `a` is congruent mod `𝔪^n` to some element of `A`, for all `n`.  At
-`n = e` (where `𝔪K·𝒪 = 𝔪^e`) this is precisely the Nakayama hypothesis, and
-`IsLocalRing.map_mkQ_eq_top` forces `A = ⊤`. -/
+a primitive element `ξ̄` of `λ/κ`, `𝒪K[ξ, π] = 𝒪`. -/
 theorem mono_adjoin_two_gen
     (ξ π : 𝒪)
     (hξ_prim : IntermediateField.adjoin (IsLocalRing.ResidueField 𝒪K)
@@ -154,13 +110,11 @@ theorem mono_adjoin_two_gen
   set e := mono_ramificationIdx 𝒪K 𝒪 hπ with he
   set A : Subalgebra 𝒪K 𝒪 := Algebra.adjoin 𝒪K ({ξ, π} : Set 𝒪) with hA
   have hπA : π ∈ A := Algebra.subset_adjoin (by simp)
-  -- `hbase`: `A + 𝔪 = 𝒪`, i.e. every `c` is `A`-congruent mod `𝔪 = (π)`.
   have hbase : ∀ c : 𝒪, ∃ b : 𝒪, b ∈ A ∧ c - b ∈ (Ideal.span {π} : Ideal 𝒪) := by
     intro c
     have hint : IsIntegral (IsLocalRing.ResidueField 𝒪K)
         (IsLocalRing.residue 𝒪 ξ) :=
       Algebra.IsIntegral.isIntegral _
-    -- `κ⟮ξ̄⟯ = ⊤` upgrades to `Algebra.adjoin κ {ξ̄} = ⊤` (ξ̄ integral).
     have hAlgTop : Algebra.adjoin (IsLocalRing.ResidueField 𝒪K)
         ({IsLocalRing.residue 𝒪 ξ} : Set (IsLocalRing.ResidueField 𝒪)) = ⊤ := by
       rw [← IntermediateField.adjoin_simple_toSubalgebra_of_isAlgebraic hint.isAlgebraic,
@@ -171,21 +125,18 @@ theorem mono_adjoin_two_gen
       rw [hAlgTop]; exact Algebra.mem_top
     rw [Algebra.adjoin_singleton_eq_range_aeval] at hmem
     obtain ⟨p, hp⟩ := hmem
-    -- lift `p : κ[X]` to `q : 𝒪K[X]` along the surjection `𝒪K ↠ κ`.
     have hsurj : Function.Surjective
         (algebraMap 𝒪K (IsLocalRing.ResidueField 𝒪K)) := by
       rw [IsLocalRing.ResidueField.algebraMap_eq]
       exact IsLocalRing.residue_surjective
     obtain ⟨q, hq⟩ := Polynomial.map_surjective _ hsurj p
     refine ⟨Polynomial.aeval ξ q, ?_, ?_⟩
-    · -- `aeval ξ q ∈ 𝒪K[ξ] ≤ A`.
-      have h1 : Polynomial.aeval ξ q ∈ Algebra.adjoin 𝒪K ({ξ} : Set 𝒪) :=
+    · have h1 : Polynomial.aeval ξ q ∈ Algebra.adjoin 𝒪K ({ξ} : Set 𝒪) :=
         Polynomial.aeval_mem_adjoin_singleton 𝒪K ξ
       have hsub : ({ξ} : Set 𝒪) ⊆ ({ξ, π} : Set 𝒪) := by
         intro y hy; rw [Set.mem_singleton_iff] at hy; subst hy; simp
       exact (Algebra.adjoin_mono hsub) h1
-    · -- `residue (aeval ξ q) = residue c`, hence `c - aeval ξ q ∈ 𝔪`.
-      have hbeq : IsLocalRing.residue 𝒪 (Polynomial.aeval ξ q)
+    · have hbeq : IsLocalRing.residue 𝒪 (Polynomial.aeval ξ q)
           = IsLocalRing.residue 𝒪 c := by
         rw [show Polynomial.aeval ξ q
               = Polynomial.eval ξ (q.map (algebraMap 𝒪K 𝒪)) from by
@@ -196,7 +147,6 @@ theorem mono_adjoin_two_gen
       rw [← mono_maximalIdeal_eq_span hπ, ← IsLocalRing.residue_eq_zero_iff,
         map_sub, hbeq]
       exact sub_self _
-  -- filtration induction: `A`-congruence mod `𝔪^n` for every `n`.
   have hind : ∀ n : ℕ, ∀ a : 𝒪,
       ∃ b : 𝒪, b ∈ A ∧ a - b ∈ (Ideal.span {π} ^ n : Ideal 𝒪) := by
     intro n
@@ -221,7 +171,6 @@ theorem mono_adjoin_two_gen
       have hab' : a = b + π ^ n * c := by rw [← hc]; ring
       have e1 : a - (b + π ^ n * b') = π ^ n * (c - b') := by rw [hab']; ring
       rw [e1, hc']; ring
-  -- Nakayama.
   rw [← Algebra.toSubmodule_eq_top]
   have hmap : Ideal.map (algebraMap 𝒪K 𝒪) (IsLocalRing.maximalIdeal 𝒪K)
       = (Ideal.span {π} ^ e : Ideal 𝒪) := by
@@ -244,8 +193,6 @@ theorem mono_adjoin_two_gen
     exact neg_mem hab
   exact (IsLocalRing.map_mkQ_eq_top (R := 𝒪K) (M := 𝒪)
     (N := Subalgebra.toSubmodule A)).mp hNak
-
-/-! ## Newton step (local ring, no completeness) -/
 
 omit [Module.Finite 𝒪K 𝒪] [FaithfulSMul 𝒪K 𝒪] in
 /-- One Newton step: given a monic `g : 𝒪K[X]`, a uniformizer `π`, and a lift
@@ -314,12 +261,7 @@ theorem mono_newton_step
 
 /-- **Neukirch II.10.4.**  Under the standing finite-DVR-extension hypotheses
 and a **separable** residue extension `λ/κ`, there is `θ : 𝒪` with
-`Algebra.adjoin 𝒪K {θ} = ⊤`, i.e. `𝒪 = 𝒪K[θ]`.
-
-`θ := ξ + π` with `π` a uniformizer and `ξ` the Newton-corrected lift of a
-primitive element `ξ̄`.  Then `aeval θ g` (`g` a monic lift of the separable
-`minpoly κ ξ̄`) is a uniformizer inside `𝒪K[θ]`, and `mono_adjoin_two_gen`
-(primitive `θ̄ = ξ̄`, uniformizer `aeval θ g`) collapses to `𝒪K[θ] = ⊤`. -/
+`Algebra.adjoin 𝒪K {θ} = ⊤`, i.e. `𝒪 = 𝒪K[θ]`. -/
 theorem mono_exists_primitive
     [Algebra.IsSeparable
        (IsLocalRing.ResidueField 𝒪K) (IsLocalRing.ResidueField 𝒪)] :
