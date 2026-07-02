@@ -261,6 +261,12 @@ instance instIsAdicComplete :
 
 -- TODO : instance : IsNonarchimedeanLocalField K
 
+/-- The *base ramification index* `e₀ = e(K / ℚ_p)` (blueprint `def:base-absolute`): the
+ramification index of the maximal ideal `(p) = 𝔪_{ℤ_[p]}` in `𝒪_K`. -/
+def baseRamificationIndex : ℕ :=
+  Ideal.ramificationIdx (R := ℤ_[p]) (S := 𝒪 K)
+    (IsLocalRing.maximalIdeal ℤ_[p]) (IsLocalRing.maximalIdeal (𝒪 K))
+
 /-!
 ## Invariants of an extension `L / K` (blueprint §1.2, §1.3, §1.4)
 -/
@@ -301,6 +307,12 @@ def ramificationIdx : ℕ :=
   Ideal.ramificationIdx (R := 𝒪 K) (S := 𝒪 L)
     (IsLocalRing.maximalIdeal (𝒪 K))
     (IsLocalRing.maximalIdeal (𝒪 L))
+
+/-- The *absolute ramification index* `e_abs = e(L / ℚ_p)` (blueprint `def:base-absolute`):
+the ramification index of the maximal ideal `(p) = 𝔪_{ℤ_[p]}` in `𝒪_L`. -/
+def absoluteRamificationIndex : ℕ :=
+  Ideal.ramificationIdx (R := ℤ_[p]) (S := 𝒪 L)
+    (IsLocalRing.maximalIdeal ℤ_[p]) (IsLocalRing.maximalIdeal (𝒪 L))
 
 /-- `L / K` is *unramified* when `e = 1` (blueprint `def:tame-wild`). -/
 def IsUnramified : Prop := ramificationIdx K L = 1
@@ -375,6 +387,34 @@ instance : FaithfulSMul (𝒪 K) (𝒪 L) :=
 
 instance : Module.IsTorsionFree (𝒪 K) L :=
   .trans_faithfulSMul (𝒪 K) (𝒪 L) L
+
+instance instIsScalarTowerPadicIntRingOfIntegers : IsScalarTower ℤ_[p] (𝒪 K) (𝒪 L) :=
+  IsScalarTower.of_algebraMap_eq fun x => by
+    apply FaithfulSMul.algebraMap_injective (𝒪 L) L
+    rw [← IsScalarTower.algebraMap_apply ℤ_[p] (𝒪 L) L,
+      ← IsScalarTower.algebraMap_apply (𝒪 K) (𝒪 L) L,
+      ← IsScalarTower.algebraMap_apply ℤ_[p] (𝒪 K) L]
+
+/-- Transitivity of ramification (blueprint `def:base-absolute`): the absolute
+ramification index is the product of the relative and base ones, `e_abs = e · e₀`. -/
+theorem absoluteRamificationIndex_eq :
+    absoluteRamificationIndex L = ramificationIdx K L * baseRamificationIndex K := by
+  have hinjKL : Function.Injective (algebraMap (𝒪 K) (𝒪 L)) :=
+    FaithfulSMul.algebraMap_injective (𝒪 K) (𝒪 L)
+  have hinjZL : Function.Injective (algebraMap ℤ_[p] (𝒪 L)) := by
+    rw [IsScalarTower.algebraMap_eq ℤ_[p] (𝒪 K) (𝒪 L), RingHom.coe_comp]
+    exact hinjKL.comp (FaithfulSMul.algebraMap_injective ℤ_[p] (𝒪 K))
+  have hmK : IsLocalRing.maximalIdeal (𝒪 K) ≠ ⊥ := IsDiscreteValuationRing.not_a_field (𝒪 K)
+  have hmZ : IsLocalRing.maximalIdeal ℤ_[p] ≠ ⊥ := IsDiscreteValuationRing.not_a_field ℤ_[p]
+  have hg0 : Ideal.map (algebraMap (𝒪 K) (𝒪 L)) (IsLocalRing.maximalIdeal (𝒪 K)) ≠ ⊥ :=
+    (Ideal.map_eq_bot_iff_of_injective hinjKL).not.mpr hmK
+  have hfg : Ideal.map (algebraMap ℤ_[p] (𝒪 L)) (IsLocalRing.maximalIdeal ℤ_[p]) ≠ ⊥ :=
+    (Ideal.map_eq_bot_iff_of_injective hinjZL).not.mpr hmZ
+  have hg : Ideal.map (algebraMap (𝒪 K) (𝒪 L)) (IsLocalRing.maximalIdeal (𝒪 K)) ≤
+      IsLocalRing.maximalIdeal (𝒪 L) :=
+    Ideal.map_le_iff_le_comap.mpr (le_of_eq Ideal.LiesOver.over)
+  rw [absoluteRamificationIndex, baseRamificationIndex, ramificationIdx,
+    Ideal.ramificationIdx_algebra_tower hg0 hfg hg, mul_comm]
 
 /-- `𝒪 L` is a finite free `𝒪 K`-module of rank `[L : K]`
 (blueprint `lem:OL-free`, Tian Lemma 9.1.1).
