@@ -4,47 +4,20 @@ namespace Neukirch.Chapter2.Sections8to10
 
 open scoped WithZero
 
-/-- A uniformizer `π` (`Irreducible π`) of the DVR `𝒪` generates `𝔪`. -/
-theorem mono_maximalIdeal_eq_span
-    {𝒪 : Type*} [CommRing 𝒪] [IsDomain 𝒪]
-    [IsDiscreteValuationRing 𝒪]
-    {π : 𝒪} (hπ : Irreducible π) :
-    IsLocalRing.maximalIdeal 𝒪 = Ideal.span {π} :=
-  hπ.maximalIdeal_eq
-
-/-- The ramification index `e`, defined DVR-directly: `𝔪K·𝒪 = (π)^e`. -/
-noncomputable def mono_ramificationIdx
-    (𝒪K : Type*) [CommRing 𝒪K] [IsDomain 𝒪K]
-    [IsDiscreteValuationRing 𝒪K]
-    (𝒪 : Type*) [CommRing 𝒪] [IsDomain 𝒪]
-    [IsDiscreteValuationRing 𝒪]
-    [Algebra 𝒪K 𝒪] [Module.Finite 𝒪K 𝒪] [FaithfulSMul 𝒪K 𝒪]
-    {π : 𝒪} (hπ : Irreducible π) : ℕ :=
-  Classical.choose
-    (IsDiscreteValuationRing.ideal_eq_span_pow_irreducible
-      (s := Ideal.map (algebraMap 𝒪K 𝒪) (IsLocalRing.maximalIdeal 𝒪K))
-      (Ideal.map_ne_bot_of_ne_bot (IsDiscreteValuationRing.not_a_field 𝒪K)) hπ)
-
-/-- `𝔪K·𝒪 = 𝔪^e`. -/
-theorem mono_mapMK_eq_pow
+/-- `𝔪K·𝒪` is a power of `𝔪`. -/
+theorem mono_exists_mapMK_eq_pow
     {𝒪K : Type*} [CommRing 𝒪K] [IsDomain 𝒪K]
     [IsDiscreteValuationRing 𝒪K]
     {𝒪 : Type*} [CommRing 𝒪] [IsDomain 𝒪]
     [IsDiscreteValuationRing 𝒪]
     [Algebra 𝒪K 𝒪] [Module.Finite 𝒪K 𝒪] [FaithfulSMul 𝒪K 𝒪]
     {π : 𝒪} (hπ : Irreducible π) :
-    Ideal.map (algebraMap 𝒪K 𝒪) (IsLocalRing.maximalIdeal 𝒪K) =
-      (IsLocalRing.maximalIdeal 𝒪) ^ (mono_ramificationIdx 𝒪K 𝒪 hπ) := by
-  have hspec :
-      Ideal.map (algebraMap 𝒪K 𝒪) (IsLocalRing.maximalIdeal 𝒪K) =
-        Ideal.span {π ^ (mono_ramificationIdx 𝒪K 𝒪 hπ)} :=
-    Classical.choose_spec
-      (IsDiscreteValuationRing.ideal_eq_span_pow_irreducible
-        (s := Ideal.map (algebraMap 𝒪K 𝒪) (IsLocalRing.maximalIdeal 𝒪K))
-        (Ideal.map_ne_bot_of_ne_bot (IsDiscreteValuationRing.not_a_field 𝒪K)) hπ)
-  rw [hspec, mono_maximalIdeal_eq_span hπ, Ideal.span_singleton_pow]
-
-/-! ## Ambient setup (mirrors the keystone typeclass conventions) -/
+    ∃ e : ℕ, Ideal.map (algebraMap 𝒪K 𝒪) (IsLocalRing.maximalIdeal 𝒪K)
+      = (IsLocalRing.maximalIdeal 𝒪) ^ e := by
+  obtain ⟨e, he⟩ := IsDiscreteValuationRing.ideal_eq_span_pow_irreducible
+    (s := Ideal.map (algebraMap 𝒪K 𝒪) (IsLocalRing.maximalIdeal 𝒪K))
+    (Ideal.map_ne_bot_of_ne_bot (IsDiscreteValuationRing.not_a_field 𝒪K)) hπ
+  exact ⟨e, by rw [he, hπ.maximalIdeal_eq, Ideal.span_singleton_pow]⟩
 
 variable
     {𝒪K : Type*} [CommRing 𝒪K] [IsDomain 𝒪K] [IsDiscreteValuationRing 𝒪K]
@@ -53,9 +26,9 @@ variable
     [IsLocalHom (algebraMap 𝒪K 𝒪)]
 
 /-- A uniformizer has zero residue. -/
-private lemma mono_residue_uniformizer_eq_zero {π : 𝒪} (hπ : Irreducible π) :
+lemma mono_residue_uniformizer_eq_zero {π : 𝒪} (hπ : Irreducible π) :
     IsLocalRing.residue 𝒪 π = 0 := by  -- (extracted by Fuse golfer)
-  rw [IsLocalRing.residue_eq_zero_iff, mono_maximalIdeal_eq_span hπ]
+  rw [IsLocalRing.residue_eq_zero_iff, hπ.maximalIdeal_eq]
   exact Ideal.mem_span_singleton_self π
 
 omit [FaithfulSMul 𝒪K 𝒪] in
@@ -75,11 +48,9 @@ theorem mono_residue_eval_lift (g : Polynomial 𝒪K) (x : 𝒪) :
           ((g.map (algebraMap 𝒪K (IsLocalRing.ResidueField 𝒪K))).map
             (algebraMap (IsLocalRing.ResidueField 𝒪K)
               (IsLocalRing.ResidueField 𝒪))) := by
-  have hcomp :
-      (IsLocalRing.residue 𝒪).comp (algebraMap 𝒪K 𝒪)
+  have hcomp : (IsLocalRing.residue 𝒪).comp (algebraMap 𝒪K 𝒪)
         = (algebraMap (IsLocalRing.ResidueField 𝒪K)
-            (IsLocalRing.ResidueField 𝒪)).comp
-            (algebraMap 𝒪K (IsLocalRing.ResidueField 𝒪K)) := by
+          (IsLocalRing.ResidueField 𝒪)).comp (algebraMap 𝒪K (IsLocalRing.ResidueField 𝒪K)) := by
     apply RingHom.ext
     intro a
     rw [RingHom.comp_apply, RingHom.comp_apply,
@@ -104,7 +75,7 @@ theorem mono_adjoin_two_gen
   classical
   haveI : Module.Finite (IsLocalRing.ResidueField 𝒪K)
       (IsLocalRing.ResidueField 𝒪) := mono_residueField_finite
-  set e := mono_ramificationIdx 𝒪K 𝒪 hπ with he
+  obtain ⟨e, hmap_pow⟩ := mono_exists_mapMK_eq_pow (𝒪K := 𝒪K) (𝒪 := 𝒪) hπ
   set A : Subalgebra 𝒪K 𝒪 := Algebra.adjoin 𝒪K ({ξ, π} : Set 𝒪) with hA
   have hπA : π ∈ A := Algebra.subset_adjoin (by simp)
   have hbase : ∀ c : 𝒪, ∃ b : 𝒪, b ∈ A ∧ c - b ∈ (Ideal.span {π} : Ideal 𝒪) := by
@@ -137,7 +108,7 @@ theorem mono_adjoin_two_gen
         rw [mono_residue_eval_lift q ξ, hq, Polynomial.eval_map,
           ← Polynomial.aeval_def]
         exact hp
-      rw [← mono_maximalIdeal_eq_span hπ, ← IsLocalRing.residue_eq_zero_iff,
+      rw [← hπ.maximalIdeal_eq, ← IsLocalRing.residue_eq_zero_iff,
         map_sub, hbeq]
       exact sub_self _
   have hind : ∀ n : ℕ, ∀ a : 𝒪,
@@ -167,7 +138,7 @@ theorem mono_adjoin_two_gen
   rw [← Algebra.toSubmodule_eq_top]
   have hmap : Ideal.map (algebraMap 𝒪K 𝒪) (IsLocalRing.maximalIdeal 𝒪K)
       = (Ideal.span {π} ^ e : Ideal 𝒪) := by
-    rw [mono_mapMK_eq_pow hπ, mono_maximalIdeal_eq_span hπ]
+    rw [hmap_pow, hπ.maximalIdeal_eq]
   have hP_eq : ((IsLocalRing.maximalIdeal 𝒪K) • (⊤ : Submodule 𝒪K 𝒪))
       = ((Ideal.span {π} ^ e : Ideal 𝒪).restrictScalars 𝒪K) := by
     rw [Ideal.smul_top_eq_map, hmap]
@@ -214,7 +185,7 @@ theorem mono_newton_step
       mono_residue_eval_lift (Polynomial.derivative g) x₀]
     rwa [Polynomial.derivative_map] at hderiv
   have hmem_span : Polynomial.eval x₀ G ∈ Ideal.span ({π} : Set 𝒪) := by
-    rw [← mono_maximalIdeal_eq_span hπ]; exact hGx₀_mem
+    rw [← hπ.maximalIdeal_eq]; exact hGx₀_mem
   rw [Ideal.mem_span_singleton] at hmem_span
   obtain ⟨b, hb⟩ := hmem_span
   set D := Polynomial.eval x₀ (Polynomial.derivative G) with hD
@@ -239,7 +210,7 @@ theorem mono_newton_step
       rw [hDtπ, hDt]
       ring
     rw [hk, hcollapse]
-    rw [mono_maximalIdeal_eq_span hπ, Ideal.span_singleton_pow,
+    rw [hπ.maximalIdeal_eq, Ideal.span_singleton_pow,
       Ideal.mem_span_singleton]
     exact ⟨k * t ^ 2, rfl⟩
 
@@ -305,7 +276,7 @@ theorem mono_exists_primitive
   set G : Polynomial 𝒪 := g.map (algebraMap 𝒪K 𝒪) with hGdef
   have hξsq_span : Polynomial.eval ξ G ∈ Ideal.span ({π ^ 2} : Set 𝒪) := by
     have := hξ_sq
-    rw [mono_maximalIdeal_eq_span hπ, Ideal.span_singleton_pow] at this
+    rw [hπ.maximalIdeal_eq, Ideal.span_singleton_pow] at this
     exact this
   rw [Ideal.mem_span_singleton] at hξsq_span
   obtain ⟨d, hd⟩ := hξsq_span
