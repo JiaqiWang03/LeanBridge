@@ -75,24 +75,29 @@ noncomputable def mulPow (x : S) (i : ℕ) :
     (LinearMap.restrict (LinearMap.mulLeft (S ⧸ P ^ e) (Ideal.Quotient.mk (P ^ e) x))
       (fun _ hy => Ideal.mul_mem_left _ _ hy))
 
-@[simp] theorem mulPow_coe_apply (x : S) (i : ℕ)
+omit [p.IsMaximal] [P.IsPrime] [IsDedekindDomain S] [NeZero e] [Module.Finite R S] in
+@[simp]
+lemma mulPow_coe_apply (x : S) (i : ℕ)
     (y : Ideal.map (Ideal.Quotient.mk (P ^ e)) (P ^ i)) :
     (mulPow x i y : S ⧸ P ^ e) = Ideal.Quotient.mk (P ^ e) x * (y : S ⧸ P ^ e) := rfl
 
+omit [p.IsMaximal] [P.IsPrime] [IsDedekindDomain S] [NeZero e] [Module.Finite R S] in
 /-- `mulPow` commutes with the inclusion `P^(i+1)/P^e ↪ P^i/P^e`. -/
-theorem mulPow_comp_inclusion (x : S) (i : ℕ) (w) :
+lemma mulPow_comp_inclusion (x : S) (i : ℕ) (w) :
     Ideal.powQuotSuccInclusion p P i (mulPow x (i + 1) w) =
       mulPow x i (Ideal.powQuotSuccInclusion p P i w) := by
   ext
   simp only [Ideal.powQuotSuccInclusion_apply_coe, mulPow_coe_apply]
 
+omit [p.IsMaximal] [P.IsPrime] [IsDedekindDomain S] [NeZero e] [Module.Finite R S] in
 /-- `mulPow` preserves the image `P^(i+1)/P^e ⊆ P^i/P^e`. -/
-theorem mulPow_mapsTo_range (x : S) (i : ℕ) :
+lemma mulPow_mapsTo_range (x : S) (i : ℕ) :
     ∀ z ∈ LinearMap.range (Ideal.powQuotSuccInclusion p P i),
       mulPow x i z ∈ LinearMap.range (Ideal.powQuotSuccInclusion p P i) := by
   rintro z ⟨w, rfl⟩
   exact ⟨mulPow x (i + 1) w, mulPow_comp_inclusion x i w⟩
 
+omit [p.IsMaximal] [P.IsPrime] [IsDedekindDomain S] [NeZero e] [Module.Finite R S] in
 /-- The trace of `mulPow x i` restricted to the image `range(incl) ≃ P^(i+1)/P^e` is
 the trace of `mulPow x (i+1)`. -/
 theorem trace_mulPow_restrict_range (x : S) (i : ℕ) :
@@ -111,7 +116,7 @@ theorem trace_mulPow_restrict_range (x : S) (i : ℕ) :
       LinearEquiv.ofInjective_apply, mulPow_coe_apply, Ideal.powQuotSuccInclusion_apply_coe]
   rw [hconj, LinearMap.trace_conj']
 
-set_option maxHeartbeats 1000000 in
+omit [p.IsMaximal] [Module.Finite R S] in
 /-- The trace of `mulPow x i` on the graded quotient `(P^i/P^e)/(P^(i+1)/P^e) ≃ S/P`
 equals the residue-field trace of `x`. -/
 theorem trace_mulPow_mapQ (x : S) (hP0 : P ≠ ⊥) {i : ℕ} (hi : i < e) :
@@ -127,13 +132,14 @@ theorem trace_mulPow_mapQ (x : S) (hP0 : P ≠ ⊥) {i : ℕ} (hi : i < e) :
     LinearEquiv.ofBijective (Ideal.quotientToQuotientRangePowQuotSucc p P ha_mem)
       ⟨Ideal.quotientToQuotientRangePowQuotSucc_injective p P hi ha_mem ha_notMem,
        Ideal.quotientToQuotientRangePowQuotSucc_surjective p P hP0 hi ha_mem ha_notMem⟩ with hE
-  -- Intertwining `mapQ ∘ E = E ∘ (mult by x)`, using only the explicit forward map `E`.
-  have hint : ((LinearMap.range (Ideal.powQuotSuccInclusion p P i)).mapQ _ (mulPow x i)
-        (mulPow_mapsTo_range x i)) ∘ₗ E.toLinearMap
+  set f := (LinearMap.range (Ideal.powQuotSuccInclusion p P i)).mapQ
+    (LinearMap.range (Ideal.powQuotSuccInclusion p P i)) (mulPow x i)
+    (mulPow_mapsTo_range x i) with hf
+  have hint : f ∘ₗ E.toLinearMap
       = E.toLinearMap ∘ₗ Algebra.lmul (R ⧸ p) (S ⧸ P) (Ideal.Quotient.mk P x) := by
-    ext y
-    obtain ⟨y, rfl⟩ := Submodule.Quotient.mk_surjective P y
-    simp only [LinearMap.coe_comp, Function.comp_apply, hE, LinearEquiv.coe_coe,
+    refine LinearMap.ext fun w => ?_
+    obtain ⟨y, rfl⟩ := Submodule.Quotient.mk_surjective P w
+    simp only [hf, LinearMap.coe_comp, Function.comp_apply, hE, LinearEquiv.coe_coe,
       LinearEquiv.ofBijective_apply, Algebra.coe_lmul_eq_mul, LinearMap.mul_apply']
     rw [Ideal.quotientToQuotientRangePowQuotSucc_mk, Submodule.mapQ_apply,
       show (Ideal.Quotient.mk P x) * Submodule.Quotient.mk y
@@ -143,19 +149,14 @@ theorem trace_mulPow_mapQ (x : S) (hP0 : P ≠ ⊥) {i : ℕ} (hi : i < e) :
     simp only [mulPow_coe_apply, ← map_mul]
     congr 1
     ring
-  have hconj : E.symm.conj ((LinearMap.range (Ideal.powQuotSuccInclusion p P i)).mapQ _
-        (mulPow x i) (mulPow_mapsTo_range x i))
-      = Algebra.lmul (R ⧸ p) (S ⧸ P) (Ideal.Quotient.mk P x) := by
-    ext z
+  have hconj : E.symm.conj f = Algebra.lmul (R ⧸ p) (S ⧸ P) (Ideal.Quotient.mk P x) := by
+    refine LinearMap.ext fun z => ?_
     simp only [LinearEquiv.conj_apply, LinearMap.coe_comp, LinearEquiv.coe_coe,
       Function.comp_apply, LinearEquiv.symm_symm]
-    rw [show ((LinearMap.range (Ideal.powQuotSuccInclusion p P i)).mapQ _ (mulPow x i)
-        (mulPow_mapsTo_range x i)) (E z) = E (Algebra.lmul (R ⧸ p) (S ⧸ P)
-        (Ideal.Quotient.mk P x) z) from LinearMap.congr_fun hint z,
-      LinearEquiv.symm_apply_apply]
+    rw [show f (E z) = E (Algebra.lmul (R ⧸ p) (S ⧸ P) (Ideal.Quotient.mk P x) z)
+        from LinearMap.congr_fun hint z, LinearEquiv.symm_apply_apply]
   rw [← LinearMap.trace_conj' _ E.symm, hconj, Algebra.trace_apply]
 
-set_option maxHeartbeats 4000000 in
 /-- The per-step trace identity (trace analogue of `Ideal.rank_pow_quot_aux`). -/
 theorem trace_mulPow_succ (x : S) (hP0 : P ≠ ⊥) {i : ℕ} (hi : i < e) :
     LinearMap.trace (R ⧸ p) (Ideal.map (Ideal.Quotient.mk (P ^ e)) (P ^ i)) (mulPow x i) =
@@ -176,9 +177,9 @@ theorem trace_mulPow_succ (x : S) (hP0 : P ≠ ⊥) {i : ℕ} (hi : i < e) :
   rw [trace_mulPow_restrict_range x i, trace_mulPow_mapQ x hP0 hi] at h
   rw [h, add_comm]
 
+omit [P.IsPrime] [IsDedekindDomain S] [NeZero e] in
 /-- Common finiteness/tower instances for the quotient `S / P^e` as an `R/p`-module. -/
-private theorem instFin_aux :
-    Module.Finite R (S ⧸ P ^ e) ∧ FiniteDimensional (R ⧸ p) (S ⧸ P ^ e) := by
+lemma instFin_aux : Module.Finite R (S ⧸ P ^ e) ∧ FiniteDimensional (R ⧸ p) (S ⧸ P ^ e) := by
   haveI : Module.Finite R (S ⧸ P ^ e) :=
     Module.Finite.of_surjective (Ideal.Quotient.mkₐ R (P ^ e)).toLinearMap
       Ideal.Quotient.mk_surjective
@@ -186,7 +187,6 @@ private theorem instFin_aux :
     IsScalarTower.of_algebraMap_eq fun _ => rfl
   exact ⟨inferInstance, Module.Finite.of_restrictScalars_finite R (R ⧸ p) (S ⧸ P ^ e)⟩
 
-set_option maxHeartbeats 1000000 in
 /-- Telescoping the per-step identity: the trace of `mulPow x 0` on `P^0/P^e` equals
 `e` times the residue trace of `x`. -/
 theorem trace_mulPow_zero_eq_nsmul (x : S) (hP0 : P ≠ ⊥) :
@@ -214,7 +214,6 @@ theorem trace_mulPow_zero_eq_nsmul (x : S) (hP0 : P ≠ ⊥) :
     rw [Subsingleton.elim (mulPow x e) 0, map_zero]
   rw [aux e le_rfl, hterm, add_zero]
 
-set_option maxHeartbeats 1000000 in
 /-- **Core trace formula.** For the (non-reduced) quotient `S / P^e`, the trace of
 multiplication by `x` equals `e` times the residue-field trace of `x`. -/
 theorem algebra_trace_quot_pow_eq_nsmul (x : S) (hP0 : P ≠ ⊥) :
@@ -242,12 +241,11 @@ theorem algebra_trace_quot_pow_eq_nsmul (x : S) (hP0 : P ≠ ⊥) :
       Algebra.coe_lmul_eq_mul, LinearMap.mul_apply', hfwd, hcoe]
   rw [Algebra.trace_apply, hconj, LinearMap.trace_conj']
 
-set_option maxHeartbeats 1000000 in
 /-- **Bridge to the integral trace.** When `p S = P^e` (e.g. `P` is the unique prime of
 `S` over `p`), the integral trace of `x` reduces mod `p` to `e` times the residue-field
 trace of `x`. -/
 theorem intTrace_residue_scaling
-    [IsDedekindDomain R] [IsDomain S] [Module.IsTorsionFree R S] [IsIntegrallyClosed S]
+    [IsDedekindDomain R] [Module.IsTorsionFree R S]
     (x : S) (hP0 : P ≠ ⊥) (hpe : Ideal.map (algebraMap R S) p = P ^ e) :
     Ideal.Quotient.mk p (Algebra.intTrace R S x) =
       e • Algebra.trace (R ⧸ p) (S ⧸ P) (Ideal.Quotient.mk P x) := by
@@ -259,10 +257,10 @@ theorem intTrace_residue_scaling
         (algebraMap (R ⧸ p) (S ⧸ Ideal.map (algebraMap R S) p)) := by
     refine RingHom.ext fun z => ?_
     obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective z
-    simp only [RingHom.comp_apply, RingEquiv.coe_ringHom_refl, id_eq, RingHom.id_apply,
+    simp only [RingHom.comp_apply, RingEquiv.coe_ringHom_refl, RingHom.id_apply,
       Ideal.Quotient.algebraMap_quotient_pow_ramificationIdx,
       Ideal.Quotient.algebraMap_quotient_map_quotient,
-      RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom, Ideal.quotEquivOfEq_mk]
+      RingEquiv.coe_toRingHom, Ideal.quotEquivOfEq_mk]
   rw [Algebra.trace_eq_of_equiv_equiv (RingEquiv.refl (R ⧸ p)) (Ideal.quotEquivOfEq hpe) he
     (Ideal.Quotient.mk (Ideal.map (algebraMap R S) p) x)]
   simp only [RingEquiv.symm_refl, RingEquiv.coe_refl, id_eq, Ideal.quotEquivOfEq_mk]

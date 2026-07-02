@@ -90,16 +90,63 @@ end Unramified
 
 Eisenstein, hence irreducible for `e ≥ 1`; the extension is totally ramified
 (`f = 1`, `e = [L:K]`) and tame when `p ∤ e`, giving `d = e − 1`. -/
+/-! ## Case 2 — `ℚ_p(p^{1/e}) = ℚ_p[X]/(Xᵉ − p)`  (`d = e − 1`) -/
 section Eisenstein
 
-variable {p : ℕ} [Fact p.Prime] (e : ℕ)
+variable {p : ℕ} [Fact p.Prime] (e : ℕ) [NeZero e]
 
-/-- The Eisenstein polynomial `Xᵉ − p ∈ ℚ_p[X]`. -/
+/-- The Eisenstein polynomial `Xᵉ − p ∈ ℚ_p[X]`。 -/
 def eisenstein : Polynomial ℚ_[p] := X ^ e - C (p : ℚ_[p])
+
+instance : Fact (Irreducible (eisenstein (p := p) e)) := by
+  have he : e ≠ 0 := NeZero.ne e
+  refine ⟨?_⟩
+  -- Integral model: `f₀ = Xᵉ − p ∈ ℤ_[p][X]`, Eisenstein at `𝔪 = (p)`.
+  set f₀ : ℤ_[p][X] := X ^ e - C (p : ℤ_[p]) with hf₀
+  have hmonic : f₀.Monic := by rw [hf₀]; exact monic_X_pow_sub_C _ he
+  have hdeg : f₀.natDegree = e := by rw [hf₀]; exact natDegree_X_pow_sub_C
+  have hprim : f₀.IsPrimitive := hmonic.isPrimitive
+  have hp_mem : (p : ℤ_[p]) ∈ IsLocalRing.maximalIdeal ℤ_[p] := by
+    rw [PadicInt.maximalIdeal_eq_span_p]; exact Ideal.mem_span_singleton_self _
+  have hp0 : (p : ℤ_[p]) ≠ 0 := by exact_mod_cast (Fact.out : p.Prime).pos.ne'
+  have hEis : f₀.IsEisensteinAt (IsLocalRing.maximalIdeal ℤ_[p]) := by
+    refine ⟨?_, ?_, ?_⟩
+    · -- leading coefficient `1 ∉ 𝔪`
+      rw [hmonic.leadingCoeff]
+      intro h1
+      exact (IsLocalRing.maximalIdeal.isMaximal ℤ_[p]).ne_top ((Ideal.eq_top_iff_one _).mpr h1)
+    · -- every strictly-lower coefficient lies in `𝔪`
+      intro n hn
+      rw [hdeg] at hn
+      rw [hf₀, coeff_sub, coeff_X_pow, coeff_C, if_neg hn.ne, zero_sub]
+      by_cases hn0 : n = 0
+      · rw [if_pos hn0]; exact (IsLocalRing.maximalIdeal ℤ_[p]).neg_mem hp_mem
+      · rw [if_neg hn0, neg_zero]; exact Ideal.zero_mem _
+    · -- constant coefficient `−p ∉ 𝔪²`
+      rw [hf₀, coeff_sub, coeff_X_pow, coeff_C, if_neg he.symm, if_pos rfl, zero_sub]
+      intro hmem
+      rw [Ideal.neg_mem_iff, PadicInt.maximalIdeal_eq_span_p, Ideal.span_singleton_pow,
+        Ideal.mem_span_singleton] at hmem
+      obtain ⟨c, hc⟩ := hmem
+      have key : (p : ℤ_[p]) * ((p : ℤ_[p]) * c) = (p : ℤ_[p]) := by
+        have e2 : (p : ℤ_[p]) * ((p : ℤ_[p]) * c) = (p : ℤ_[p]) ^ 2 * c := by ring
+        rw [e2, ← hc]
+      have hpc1 : (p : ℤ_[p]) * c = 1 := mul_left_cancel₀ hp0 (key.trans (mul_one _).symm)
+      exact ((IsLocalRing.mem_maximalIdeal _).mp hp_mem) (IsUnit.of_mul_eq_one c hpc1)
+  -- Eisenstein ⇒ irreducible over `ℤ_[p]`.
+  have hirr₀ : Irreducible f₀ :=
+    hEis.irreducible (IsLocalRing.maximalIdeal.isMaximal ℤ_[p]).isPrime hprim
+      (by rw [hdeg]; exact Nat.pos_of_ne_zero he)
+  -- Descend to `ℚ_[p]` by Gauss's lemma.
+  have hmapeq : f₀.map (algebraMap ℤ_[p] ℚ_[p]) = eisenstein (p := p) e := by
+    ext n
+    simp [hf₀, eisenstein, coeff_sub, coeff_X_pow]
+  rw [← hmapeq]
+  exact (hprim.irreducible_iff_irreducible_map_fraction_map (K := ℚ_[p])).mp hirr₀
 
 variable [Fact (Irreducible (eisenstein (p := p) e))]
 
-/-- `ℚ_p(p^{1/e}) := ℚ_p[X]/(Xᵉ − p)`. -/
+/-- `ℚ_p(p^{1/e}) := ℚ_p[X]/(Xᵉ − p)`。 -/
 abbrev Qpe : Type _ := AdjoinRoot (eisenstein (p := p) e)
 
 instance : Module.Finite ℚ_[p] (Qpe (p := p) e) :=
@@ -109,7 +156,8 @@ instance : Module.Finite ℚ_[p] (Qpe (p := p) e) :=
 
 instance : PadicField (Qpe (p := p) e) p := PadicField.mk
 
-/-- `[ℚ_p(p^{1/e}) : ℚ_p] = e`. -/
+omit [NeZero e] in
+/-- `[ℚ_p(p^{1/e}) : ℚ_p] = e`。 -/
 theorem Qpe_finrank : Module.finrank ℚ_[p] (Qpe (p := p) e) = e := by
   rw [PowerBasis.finrank
       (AdjoinRoot.powerBasis
@@ -118,27 +166,133 @@ theorem Qpe_finrank : Module.finrank ℚ_[p] (Qpe (p := p) e) = e := by
   simpa [eisenstein] using
     (Polynomial.natDegree_X_pow_sub_C (R := ℚ_[p]) (n := e) (r := (p : ℚ_[p])))
 
-/-- Totally ramified: `f = 1`. -/
-theorem Qpe_inertiaDeg : inertiaDeg ℚ_[p] (Qpe (p := p) e) = 1 := sorry
+/-- **通用引理 (0):** DVR 中极大理想幂反序:`𝔪^a ≤ 𝔪^b ↔ b ≤ a`。 -/
+private theorem pow_maximalIdeal_antitone {S : Type*} [CommRing S] [IsDomain S]
+    [IsDiscreteValuationRing S] {a b : ℕ} :
+    (IsLocalRing.maximalIdeal S) ^ a ≤ (IsLocalRing.maximalIdeal S) ^ b ↔ b ≤ a := by
+  exact (Ideal.pow_right_strictAnti (IsLocalRing.maximalIdeal S)
+    (IsDiscreteValuationRing.not_a_field S)
+    (IsLocalRing.maximalIdeal.isMaximal S).ne_top).le_iff_ge
 
-/-- Ramification index is the full degree: `e = [L:K]`. -/
+/-- **通用引理 (1):** DVR `S` 中，若 `map (algebraMap R S) p` 非零且 `≤ 𝔪_S^n`，
+则 `n ≤ ramificationIdx p 𝔪_S`。 -/
+private theorem le_ramificationIdx_of_map_le_pow
+    {R S : Type*} [CommRing R] [CommRing S] [IsDomain S] [IsDiscreteValuationRing S]
+    [Algebra R S] (p : Ideal R) {n : ℕ}
+    (hne : p.map (algebraMap R S) ≠ ⊥)
+    (hle : p.map (algebraMap R S) ≤ (IsLocalRing.maximalIdeal S) ^ n) :
+    n ≤ Ideal.ramificationIdx p (IsLocalRing.maximalIdeal S) := by
+  set P := IsLocalRing.maximalIdeal S with hPdef
+  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible S
+  obtain ⟨k, hk⟩ := IsDiscreteValuationRing.ideal_eq_span_pow_irreducible hne hϖ
+  have hmapP : p.map (algebraMap R S) = P ^ k := by
+    rw [hk, ← Ideal.span_singleton_pow, ← hϖ.maximalIdeal_eq]
+  have hram : Ideal.ramificationIdx p P = k := by
+    apply Ideal.ramificationIdx_spec
+    · exact le_of_eq hmapP
+    · rw [hmapP]
+      intro hcon
+      have : k + 1 ≤ k := pow_maximalIdeal_antitone.mp hcon
+      omega
+  have hnk : n ≤ k := by
+    rw [hmapP] at hle
+    exact pow_maximalIdeal_antitone.mp hle
+  omega
+
+/-- **组装引理（纯理想论，已证）:** `θ ∈ I ⟹ span {θ^e} ≤ I^e`。 -/
+private theorem span_pow_le_pow {S : Type*} [CommRing S] {θ : S} {I : Ideal S} (m : ℕ)
+    (h : θ ∈ I) : Ideal.span {θ ^ m} ≤ I ^ m := by
+  rw [← Ideal.span_singleton_pow]
+  have hbase : Ideal.span {θ} ≤ I := (Submodule.span_singleton_le_iff_mem θ I).mpr h
+  induction m with
+  | zero => simp
+  | succ k ih => rw [pow_succ, pow_succ]; exact Ideal.mul_mono ih hbase
+
+/-- `p` 视作 `𝒪_K = 𝒪 ℚ_[p]` 中的元素（`ℤ_p` 的一致化子在整数环里的像）。 -/
+private def pElt (p : ℕ) [Fact p.Prime] : 𝒪 ℚ_[p] :=
+  algebraMap ℤ_[p] (𝒪 ℚ_[p]) (p : ℤ_[p])
+
+/-- **诚实 `sorry` (A) —— `𝔪_K = (p)`。**
+`𝒪_K = integralClosure ℤ_p ℚ_p`；因 `ℤ_p` 在其分式域中整闭，此整闭包即 `ℤ_p` 的像，
+`𝒪_K ≃ ℤ_p`。在此同构下 `𝔪_K` 对应 `𝔪_{ℤ_p} = span {p}`。搬运子代数同构与极大理想
+对应是纯转写工作，暂留 `sorry`。 -/
+theorem Qpe_maximalIdeal_eq_span :
+    IsLocalRing.maximalIdeal (𝒪 ℚ_[p]) = Ideal.span {pElt p} :=
+  sorry
+
+/-- **诚实 `sorry` (B) —— Eisenstein 根的整数提升。**
+`eisenstein e = X^e − C p` 的根 `π := AdjoinRoot.root` 满足 `π^e = p`（在 `L` 中）；
+因 `X^e − p` 在 `ℤ_p` 上首一，`π` 整，提升为 `θ ∈ 𝒪_L`，`θ^e = p`（像），且 `p` 在
+`𝒪_L` 中非单位故 `θ ∈ 𝔪_L`。把 `AdjoinRoot.root` 的方程从 `L` 落到整数环层面这套
+「Eisenstein ⟹ 全分歧」计算目前不在 Mathlib 中。 -/
+theorem Qpe_exists_integral_root :
+    ∃ θ : 𝒪 (Qpe (p := p) e),
+      θ ∈ IsLocalRing.maximalIdeal (𝒪 (Qpe (p := p) e)) ∧
+      θ ^ e = algebraMap (𝒪 ℚ_[p]) (𝒪 (Qpe (p := p) e)) (pElt p) :=
+  sorry
+
+/-- 几何核心 `𝔪_K·𝒪_L ⊆ 𝔪_L^e`，由组装引理喂入 (A)、(B) 得到（无 `sorry`）。 -/
+theorem Qpe_map_maximalIdeal_le_pow :
+    (IsLocalRing.maximalIdeal (𝒪 ℚ_[p])).map
+        (algebraMap (𝒪 ℚ_[p]) (𝒪 (Qpe (p := p) e)))
+      ≤ (IsLocalRing.maximalIdeal (𝒪 (Qpe (p := p) e))) ^ e := by
+  obtain ⟨θ, hθmem, hθpow⟩ := Qpe_exists_integral_root (p := p) e
+  rw [Qpe_maximalIdeal_eq_span (p := p), Ideal.map_span, Set.image_singleton, ← hθpow]
+  exact span_pow_le_pow e hθmem
+
+/-- 全分歧下界 `e ≤ e(L/K)`，由通用引理 (1) 喂入几何核心得到（无 `sorry`）。 -/
+theorem Qpe_le_ramificationIdx :
+    e ≤ ramificationIdx ℚ_[p] (Qpe (p := p) e) := by
+  have hinj : Function.Injective (algebraMap (𝒪 ℚ_[p]) (𝒪 (Qpe (p := p) e))) :=
+    FaithfulSMul.algebraMap_injective _ _
+  have hmK_ne_bot : IsLocalRing.maximalIdeal (𝒪 ℚ_[p]) ≠ ⊥ :=
+    IsDiscreteValuationRing.not_a_field (𝒪 ℚ_[p])
+  have hne : (IsLocalRing.maximalIdeal (𝒪 ℚ_[p])).map
+      (algebraMap (𝒪 ℚ_[p]) (𝒪 (Qpe (p := p) e))) ≠ ⊥ := by
+    rw [Ne, Ideal.map_eq_bot_iff_of_injective hinj]
+    exact hmK_ne_bot
+  exact le_ramificationIdx_of_map_le_pow
+    (IsLocalRing.maximalIdeal (𝒪 ℚ_[p])) hne (Qpe_map_maximalIdeal_le_pow (p := p) e)
+
+/-- Totally ramified: `f = 1`。由全分歧下界 `e ≤ e(L/K)`、基本恒等式 `e(L/K)·f = e`、
+以及 `f ≥ 1` 三者挤出（无 `sorry`）。 -/
+theorem Qpe_inertiaDeg : inertiaDeg ℚ_[p] (Qpe (p := p) e) = 1 := by
+  have hef : ramificationIdx ℚ_[p] (Qpe (p := p) e)
+        * inertiaDeg ℚ_[p] (Qpe (p := p) e) = e := by
+    have h := ramificationIdx_mul_inertiaDeg ℚ_[p] (Qpe (p := p) e)
+    rwa [Qpe_finrank e] at h
+  have he_pos : 0 < e := by
+    have hpos : 0 < Module.finrank ℚ_[p] (Qpe (p := p) e) := Module.finrank_pos
+    rwa [Qpe_finrank e] at hpos
+  have hlb := Qpe_le_ramificationIdx (p := p) e
+  have hr_pos : 0 < ramificationIdx ℚ_[p] (Qpe (p := p) e) := lt_of_lt_of_le he_pos hlb
+  have hfle : inertiaDeg ℚ_[p] (Qpe (p := p) e) ≤ 1 := by
+    apply Nat.le_of_mul_le_mul_left _ hr_pos
+    calc ramificationIdx ℚ_[p] (Qpe (p := p) e) * inertiaDeg ℚ_[p] (Qpe (p := p) e)
+          = e := hef
+      _ ≤ ramificationIdx ℚ_[p] (Qpe (p := p) e) := hlb
+      _ = ramificationIdx ℚ_[p] (Qpe (p := p) e) * 1 := (mul_one _).symm
+  have hf_pos : 0 < inertiaDeg ℚ_[p] (Qpe (p := p) e) :=
+    Nat.pos_of_ne_zero (inertiaDeg_ne_zero ℚ_[p] (Qpe (p := p) e))
+  omega
+
+/-- Ramification index is the full degree: `e = [L:K]`。 -/
 theorem Qpe_ramificationIdx : ramificationIdx ℚ_[p] (Qpe (p := p) e) = e := by
   have h := ramificationIdx_mul_inertiaDeg ℚ_[p] (Qpe (p := p) e)
-  rw [Qpe_inertiaDeg e, mul_one, Qpe_finrank e] at h
+  rw [Qpe_inertiaDeg (p := p) e, mul_one, Qpe_finrank (p := p) e] at h
   exact h
 
-/-- Tame when `p ∤ e`. -/
+/-- Tame when `p ∤ e`。 -/
 theorem Qpe_isTamelyRamified (hpe : ¬ (p ∣ e)) :
     IsTamelyRamified ℚ_[p] (Qpe (p := p) e) := by
   show ¬ (p ∣ ramificationIdx ℚ_[p] (Qpe (p := p) e))
-  rw [Qpe_ramificationIdx e]; exact hpe
+  rw [Qpe_ramificationIdx (p := p) e]; exact hpe
 
-/-- The headline identity: `d = e − 1` for `ℚ_p(p^{1/e})` with `p ∤ e`.
-Derived from `discExponent_tame` (`d = f·(e−1)`) with `f = 1`. -/
+/-- The headline identity: `d = e − 1` for `ℚ_p(p^{1/e})` with `p ∤ e`。 -/
 theorem Qpe_discriminantExponent (hpe : ¬ (p ∣ e)) :
     discriminantExponent ℚ_[p] (Qpe (p := p) e) = e - 1 := by
-  rw [discExponent_tame ℚ_[p] (Qpe (p := p) e) (Qpe_isTamelyRamified e hpe),
-      Qpe_inertiaDeg e, one_mul, Qpe_ramificationIdx e]
+  rw [discExponent_tame ℚ_[p] (Qpe (p := p) e) (Qpe_isTamelyRamified (p := p) e hpe),
+      Qpe_inertiaDeg (p := p) e, one_mul, Qpe_ramificationIdx (p := p) e]
 
 end Eisenstein
 
