@@ -778,10 +778,9 @@ theorem differentExponent_tame :
       Ideal.Quotient.eq_zero_iff_mem, IsLocalRing.mem_maximalIdeal, mem_nonunits_iff]
     intro hu
     rw [show (p : 𝒪 K) = algebraMap ℤ_[p] (𝒪 K) (p : ℤ_[p]) from (map_natCast _ p).symm] at hu
-    have hunit : IsUnit (p : ℤ_[p]) := IsLocalHom.map_nonunit _ hu
     have hmem : (p : ℤ_[p]) ∈ IsLocalRing.maximalIdeal ℤ_[p] := by
       rw [PadicInt.maximalIdeal_eq_span_p]; exact Ideal.mem_span_singleton_self _
-    exact ((IsLocalRing.mem_maximalIdeal _).mp hmem) hunit
+    exact ((IsLocalRing.mem_maximalIdeal _).mp hmem) (IsLocalHom.map_nonunit _ hu)
   have hcore := fun x => DedekindTame.intTrace_residue_scaling
     (p := maximalIdeal (𝒪 K)) (P := maximalIdeal (𝒪 L)) x hP0 hPe
   refine ⟨hfin.le_multiplicity_of_pow_dvd (pow_sub_one_dvd_differentIdeal (P := maximalIdeal (𝒪 L)) (e := ramificationIdx K L)
@@ -823,18 +822,15 @@ theorem differentExponent_tame :
           ← IsScalarTower.algebraMap_apply (𝒪 K) K L]
       rw [htower] at hc₀
       obtain ⟨d, hd⟩ := Ideal.mem_span_singleton.mp (hspan ▸ hmem c₀)
-      have hkey : (algebraMap (𝒪 K) K ϖ) * Algebra.trace K L z
-          = (algebraMap (𝒪 K) K ϖ) * algebraMap (𝒪 K) K d := by
-        have h1 : Algebra.trace K L (z * algebraMap K L (algebraMap (𝒪 K) K ϖ))
-            = (algebraMap (𝒪 K) K ϖ) * Algebra.trace K L z := by
-          rw [mul_comm z, ← Algebra.smul_def, map_smul, smul_eq_mul]
-        have h2 : Algebra.trace K L (z * algebraMap K L (algebraMap (𝒪 K) K ϖ))
-            = algebraMap (𝒪 K) K (Algebra.intTrace (𝒪 K) (𝒪 L) c₀) := by
-          rw [← hc₀]; exact (Algebra.algebraMap_intTrace c₀).symm
-        rw [h1] at h2
-        rw [h2, hd, map_mul]
       rw [Submodule.mem_one]
-      exact ⟨d, (mul_left_cancel₀ hϖne hkey).symm⟩
+      exact ⟨d, (mul_left_cancel₀ hϖne (by
+      have h2 : Algebra.trace K L (z * algebraMap K L (algebraMap (𝒪 K) K ϖ))
+          = algebraMap (𝒪 K) K (Algebra.intTrace (𝒪 K) (𝒪 L) c₀) := by
+        rw [← hc₀]; exact (Algebra.algebraMap_intTrace c₀).symm
+      rw [show Algebra.trace K L (z * algebraMap K L (algebraMap (𝒪 K) K ϖ))
+            = (algebraMap (𝒪 K) K ϖ) * Algebra.trace K L z from by
+          rw [mul_comm z, ← Algebra.smul_def, map_smul, smul_eq_mul]] at h2
+      rw [h2, hd, map_mul])).symm⟩
     have hple : ramificationIdx K L ≤ differentExponent K L :=
       hfin.pow_dvd_iff_le_multiplicity.mp (Ideal.dvd_iff_le.mpr hle_id)
     have he1 : 1 ≤ ramificationIdx K L := Nat.one_le_iff_ne_zero.mpr hene.out

@@ -379,8 +379,46 @@ theorem Q2sqrt2_finrank : Module.finrank ℚ_[2] Q2sqrt2 = 2 := by
     AdjoinRoot.powerBasis_dim]
   simp [sqrtTwoPoly]
 
+/-- 整的 `√2`：`θ ∈ 𝔪_L` 且 `θ² = (2)`。 -/
+theorem Q2sqrt2_exists_integral_root :
+    ∃ θ : 𝒪 Q2sqrt2,
+      θ ∈ IsLocalRing.maximalIdeal (𝒪 Q2sqrt2) ∧
+      θ ^ 2 = algebraMap (𝒪 ℚ_[2]) (𝒪 Q2sqrt2) (pElt 2) := by
+  exact Qpe_exists_integral_root (p := 2) 2
+
+theorem Q2sqrt2_map_maximalIdeal_le_pow :
+    (IsLocalRing.maximalIdeal (𝒪 ℚ_[2])).map (algebraMap (𝒪 ℚ_[2]) (𝒪 Q2sqrt2))
+      ≤ (IsLocalRing.maximalIdeal (𝒪 Q2sqrt2)) ^ 2 := by
+  obtain ⟨θ, hθmem, hθpow⟩ := Q2sqrt2_exists_integral_root
+  rw [Qpe_maximalIdeal_eq_span (p := 2), Ideal.map_span, Set.image_singleton, ← hθpow]
+  exact span_pow_le_pow 2 hθmem
+
+theorem Q2sqrt2_le_ramificationIdx : 2 ≤ ramificationIdx ℚ_[2] Q2sqrt2 := by
+  have hinj : Function.Injective (algebraMap (𝒪 ℚ_[2]) (𝒪 Q2sqrt2)) :=
+    FaithfulSMul.algebraMap_injective _ _
+  have hne : (IsLocalRing.maximalIdeal (𝒪 ℚ_[2])).map
+      (algebraMap (𝒪 ℚ_[2]) (𝒪 Q2sqrt2)) ≠ ⊥ := by
+    rw [Ne, Ideal.map_eq_bot_iff_of_injective hinj]
+    exact IsDiscreteValuationRing.not_a_field (𝒪 ℚ_[2])
+  exact le_ramificationIdx_of_map_le_pow
+    (IsLocalRing.maximalIdeal (𝒪 ℚ_[2])) hne Q2sqrt2_map_maximalIdeal_le_pow
+
 /-- Totally ramified: `f = 1`. -/
-theorem Q2sqrt2_inertiaDeg : inertiaDeg ℚ_[2] Q2sqrt2 = 1 := sorry
+theorem Q2sqrt2_inertiaDeg : inertiaDeg ℚ_[2] Q2sqrt2 = 1 := by
+  have hef : ramificationIdx ℚ_[2] Q2sqrt2 * inertiaDeg ℚ_[2] Q2sqrt2 = 2 := by
+    have h := ramificationIdx_mul_inertiaDeg ℚ_[2] Q2sqrt2
+    rwa [Q2sqrt2_finrank] at h
+  have hlb := Q2sqrt2_le_ramificationIdx
+  have hr_pos : 0 < ramificationIdx ℚ_[2] Q2sqrt2 := by omega
+  have hfle : inertiaDeg ℚ_[2] Q2sqrt2 ≤ 1 := by
+    apply Nat.le_of_mul_le_mul_left _ hr_pos
+    calc ramificationIdx ℚ_[2] Q2sqrt2 * inertiaDeg ℚ_[2] Q2sqrt2
+          = 2 := hef
+      _ ≤ ramificationIdx ℚ_[2] Q2sqrt2 := hlb
+      _ = ramificationIdx ℚ_[2] Q2sqrt2 * 1 := (mul_one _).symm
+  have hf_pos : 0 < inertiaDeg ℚ_[2] Q2sqrt2 :=
+    Nat.pos_of_ne_zero (inertiaDeg_ne_zero ℚ_[2] Q2sqrt2)
+  omega
 
 /-- Ramified of degree `2`: `e = 2`. -/
 theorem Q2sqrt2_ramificationIdx : ramificationIdx ℚ_[2] Q2sqrt2 = 2 := by
