@@ -62,12 +62,20 @@ instance : Module.Finite ℚ_[p] (Unr g) :=
 
 instance : PadicField (Unr g) p := PadicField.mk
 
-/-- Residue degree is the full degree: `f = n = [L:K]`. -/
-theorem Unr_inertiaDeg (hg : g.natDegree = n) :
-    inertiaDeg ℚ_[p] (Unr g) = n := sorry
-
 /-- Ramification index is `1`. -/
 theorem Unr_ramificationIdx : ramificationIdx ℚ_[p] (Unr g) = 1 := sorry
+
+/-- Residue degree is the full degree: `f = n = [L:K]`. -/
+theorem Unr_inertiaDeg (hg : g.natDegree = n) :
+    inertiaDeg ℚ_[p] (Unr g) = n := by
+  have hfr : Module.finrank ℚ_[p] (Unr g) = n := by
+    rw [PowerBasis.finrank
+        (AdjoinRoot.powerBasis (Irreducible.ne_zero (Fact.out : Irreducible g))),
+      AdjoinRoot.powerBasis_dim]
+    exact hg
+  have h := ramificationIdx_mul_inertiaDeg ℚ_[p] (Unr g)
+  rw [Unr_ramificationIdx g, one_mul, hfr] at h
+  exact h
 
 /-- `L/ℚ_p` is unramified. -/
 theorem Unr_isUnramified : IsUnramified ℚ_[p] (Unr g) := Unr_ramificationIdx g
@@ -114,7 +122,10 @@ theorem Qpe_finrank : Module.finrank ℚ_[p] (Qpe (p := p) e) = e := by
 theorem Qpe_inertiaDeg : inertiaDeg ℚ_[p] (Qpe (p := p) e) = 1 := sorry
 
 /-- Ramification index is the full degree: `e = [L:K]`. -/
-theorem Qpe_ramificationIdx : ramificationIdx ℚ_[p] (Qpe (p := p) e) = e := sorry
+theorem Qpe_ramificationIdx : ramificationIdx ℚ_[p] (Qpe (p := p) e) = e := by
+  have h := ramificationIdx_mul_inertiaDeg ℚ_[p] (Qpe (p := p) e)
+  rw [Qpe_inertiaDeg e, mul_one, Qpe_finrank e] at h
+  exact h
 
 /-- Tame when `p ∤ e`. -/
 theorem Qpe_isTamelyRamified (hpe : ¬ (p ∣ e)) :
@@ -168,11 +179,14 @@ theorem Q2sqrt2_finrank : Module.finrank ℚ_[2] Q2sqrt2 = 2 := by
     AdjoinRoot.powerBasis_dim]
   simp [sqrtTwoPoly]
 
-/-- Ramified of degree `2`: `e = 2`. -/
-theorem Q2sqrt2_ramificationIdx : ramificationIdx ℚ_[2] Q2sqrt2 = 2 := sorry
-
 /-- Totally ramified: `f = 1`. -/
 theorem Q2sqrt2_inertiaDeg : inertiaDeg ℚ_[2] Q2sqrt2 = 1 := sorry
+
+/-- Ramified of degree `2`: `e = 2`. -/
+theorem Q2sqrt2_ramificationIdx : ramificationIdx ℚ_[2] Q2sqrt2 = 2 := by
+  have h := ramificationIdx_mul_inertiaDeg ℚ_[2] Q2sqrt2
+  rw [Q2sqrt2_inertiaDeg, mul_one, Q2sqrt2_finrank] at h
+  exact h
 
 /-- Wildly ramified: `2 ∣ e`. -/
 theorem Q2sqrt2_isWildlyRamified : IsWildlyRamified ℚ_[2] Q2sqrt2 := by
