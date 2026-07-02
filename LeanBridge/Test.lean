@@ -4,25 +4,25 @@ import LeanBridge.PadicInv
 /-!
 # Concrete test cases for `p`-adic field invariants (issue #63)
 
-The three concrete extensions from the issue, built explicitly as
-`ℚ_p[X]/(f) = AdjoinRoot f`:
+This file contains compiled examples for the invariants defined in
+`LeanBridge.PadicInv`.  Each extension is presented explicitly as an
+`AdjoinRoot f`, so the field is literally `ℚ_p[X]/(f)`.
 
-1. **Unramified** `ℚ_p[X]/(g)` for `g` a lift of an irreducible degree-`n`
-   polynomial mod `p`  →  `e = 1`, `f = n = [L:K]`, `d = 0`.
-2. **Totally tamely ramified** `ℚ_p(p^{1/e}) = ℚ_p[X]/(X^e − p)` (Eisenstein)
-   →  `f = 1`, `e = [L:K]`, and `d = e − 1` when `p ∤ e`.
-3. **Wildly ramified** `ℚ_2(√2) = ℚ_2[X]/(X² − 2)`  →  `p = 2 ∣ e = 2`, wild,
-   with `δ = 3`, `d = 3`.
+The three examples are:
 
-What is `sorry`'d and why:
-* `Fact (Irreducible …)` — true by Eisenstein / reduction-mod-`p`, proof omitted.
-* `Module.Finite` instances — true (`AdjoinRoot` of a nonzero poly over a field
-  is finite), proof omitted.
-* the numeric invariant theorems (`e`, `f`, `d`, `δ`) — these are genuine
-  ramification computations not yet available in Mathlib.
-
-NOTE: written against the API in the shared file, NOT compiled here; instance /
-lemma names may need small adjustments.
+1. **Unramified quadratic over `ℚ_2`**:
+   `ℚ_2[X]/(X^2 + X + 1)`.  The integral polynomial reduces to the irreducible
+   polynomial `X^2 + X + 1` over `𝔽_2`; the residue degree is at least `2`, and
+   the identity `e * f = [L : K]` forces `e = 1`, `f = 2`, and `d = 0`.
+2. **Totally ramified Eisenstein extensions**:
+   `ℚ_p[X]/(X^e - p)`.  The root is integral, its `e`-th power is the image of
+   `p`, and the induced ideal containment gives `e ≤ e(L/K)`.  Since the degree
+   is `e`, this yields `f = 1`, `e(L/K) = e`, and in the tame case `d = e - 1`.
+3. **Wild quadratic over `ℚ_2`**:
+   `ℚ_2[X]/(X^2 - 2)`.  This is the `p = e = 2` specialization of the
+   Eisenstein construction, hence totally and wildly ramified.  The different is
+   computed from the monogenic presentation and the derivative `2θ`, giving
+   `δ = 3` and therefore `d = fδ = 3`.
 -/
 
 open scoped PadicField
@@ -41,12 +41,12 @@ instance instTowerSelf (p : ℕ) [Fact p.Prime] (L : Type*) [Field L] [Algebra �
     IsScalarTower ℚ_[p] ℚ_[p] L :=
   IsScalarTower.of_algebraMap_eq fun x => by simp
 
-/-! ## Case 1 — unramified `ℚ_p[X]/(g)`  (`e = 1`, `f = n`, `d = 0`)
+/-! ## Case 1 — unramified `ℚ_2[X]/(X² + X + 1)`  (`e = 1`, `f = 2`, `d = 0`)
 
-Concretely: take `g : ℚ_p[X]` monic of degree `n` that reduces mod `p` to an
-irreducible polynomial over the residue field `𝔽_p`. Then `L = ℚ_p[X]/(g)` is the
-unramified extension of degree `n` (`e = 1`, residue field grows to degree `n`).
-Here `g` is carried as an explicit polynomial with its irreducibility as a `Fact`. -/
+We use the integral polynomial `X² + X + 1 ∈ ℤ_2[X]`. Its reduction mod `2` has
+no root in `𝔽_2`, hence is irreducible.  The integral root gives an element of
+the residue field of `𝒪_L` whose minimal polynomial has degree `2`; therefore
+`f ≥ 2`.  Since `[L : ℚ_2] = 2`, the identity `e * f = [L : K]` forces `e = 1`. -/
 section UnramifiedConcrete
 
 def zeta3PolyZ : Polynomial ℤ_[2] := X ^ 2 + C 1 * X + C 1
@@ -206,16 +206,20 @@ theorem Q2zeta3_discriminantExponent : discriminantExponent ℚ_[2] Q2zeta3 = 0 
   (discExponent_eq_zero_iff_unramified ℚ_[2] Q2zeta3).mpr Q2zeta3_isUnramified
 
 end UnramifiedConcrete
-/-! ## Case 2 — `ℚ_p(p^{1/e}) = ℚ_p[X]/(Xᵉ − p)`  (`d = e − 1`)
 
-Eisenstein, hence irreducible for `e ≥ 1`; the extension is totally ramified
-(`f = 1`, `e = [L:K]`) and tame when `p ∤ e`, giving `d = e − 1`. -/
-/-! ## Case 2 — `ℚ_p(p^{1/e}) = ℚ_p[X]/(Xᵉ − p)`  (`d = e − 1`) -/
+/-! ## Case 2 — Eisenstein extensions `ℚ_p[X]/(Xᵉ − p)`  (`f = 1`, `d = e − 1`)
+
+For nonzero `e`, `Xᵉ − p` is proved irreducible by applying Eisenstein's
+criterion over `ℤ_p` and then Gauss's lemma.  The root is lifted to the ring of
+integers, satisfies `θᵉ = p`, and lies in the maximal ideal.  This gives
+`𝔪_K 𝒪_L ≤ 𝔪_L^e`, hence `e ≤ e(L/K)`; together with `[L : K] = e` and
+`e(L/K) * f(L/K) = [L : K]`, the extension is totally ramified.  When `p ∤ e`,
+the tame discriminant formula from `PadicInv` gives `d = e - 1`. -/
 section Eisenstein
 
 variable {p : ℕ} [Fact p.Prime] (e : ℕ) [NeZero e]
 
-/-- The Eisenstein polynomial `Xᵉ − p ∈ ℚ_p[X]`。 -/
+/-- The Eisenstein polynomial `Xᵉ − p ∈ ℚ_p[X]`. -/
 def eisenstein : Polynomial ℚ_[p] := X ^ e - C (p : ℚ_[p])
 
 instance : Fact (Irreducible (eisenstein (p := p) e)) := by
@@ -265,7 +269,7 @@ instance : Fact (Irreducible (eisenstein (p := p) e)) := by
 
 variable [Fact (Irreducible (eisenstein (p := p) e))]
 
-/-- `ℚ_p(p^{1/e}) := ℚ_p[X]/(Xᵉ − p)`。 -/
+/-- `ℚ_p(p^{1/e}) := ℚ_p[X]/(Xᵉ − p)`. -/
 abbrev Qpe : Type _ := AdjoinRoot (eisenstein (p := p) e)
 
 instance : Module.Finite ℚ_[p] (Qpe (p := p) e) :=
@@ -275,7 +279,7 @@ instance : Module.Finite ℚ_[p] (Qpe (p := p) e) :=
 instance : PadicField (Qpe (p := p) e) p := PadicField.mk
 
 omit [NeZero e] in
-/-- `[ℚ_p(p^{1/e}) : ℚ_p] = e`。 -/
+/-- `[ℚ_p(p^{1/e}) : ℚ_p] = e`. -/
 theorem Qpe_finrank : Module.finrank ℚ_[p] (Qpe (p := p) e) = e := by
   rw [PowerBasis.finrank
       (AdjoinRoot.powerBasis
@@ -440,19 +444,19 @@ theorem Qpe_inertiaDeg : inertiaDeg ℚ_[p] (Qpe (p := p) e) = 1 := by
     Nat.pos_of_ne_zero (inertiaDeg_ne_zero ℚ_[p] (Qpe (p := p) e))
   omega
 
-/-- Ramification index is the full degree: `e = [L:K]`。 -/
+/-- Ramification index is the full degree: `e(L/K) = e = [L : K]`. -/
 theorem Qpe_ramificationIdx : ramificationIdx ℚ_[p] (Qpe (p := p) e) = e := by
   have h := ramificationIdx_mul_inertiaDeg ℚ_[p] (Qpe (p := p) e)
   rw [Qpe_inertiaDeg (p := p) e, mul_one, Qpe_finrank (p := p) e] at h
   exact h
 
-/-- Tame when `p ∤ e`。 -/
+/-- The Eisenstein extension is tame when `p ∤ e`. -/
 theorem Qpe_isTamelyRamified (hpe : ¬ (p ∣ e)) :
     IsTamelyRamified ℚ_[p] (Qpe (p := p) e) := by
   show ¬ (p ∣ ramificationIdx ℚ_[p] (Qpe (p := p) e))
   rw [Qpe_ramificationIdx (p := p) e]; exact hpe
 
-/-- The headline identity: `d = e − 1` for `ℚ_p(p^{1/e})` with `p ∤ e`。 -/
+/-- The tame discriminant identity: `d = e − 1` for `ℚ_p(p^{1/e})` with `p ∤ e`. -/
 theorem Qpe_discriminantExponent (hpe : ¬ (p ∣ e)) :
     discriminantExponent ℚ_[p] (Qpe (p := p) e) = e - 1 := by
   rw [discExponent_tame ℚ_[p] (Qpe (p := p) e) (Qpe_isTamelyRamified (p := p) e hpe),
@@ -460,10 +464,13 @@ theorem Qpe_discriminantExponent (hpe : ¬ (p ∣ e)) :
 
 end Eisenstein
 
-/-! ## Case 3 — wildly ramified `ℚ_2(√2) = ℚ_2[X]/(X² − 2)`
+/-! ## Case 3 — wild quadratic `ℚ_2(√2) = ℚ_2[X]/(X² − 2)`
 
-`X² − 2` is Eisenstein at `2`, so this is ramified of degree `2`; since `p = 2 ∣ 2`
-it is wildly ramified. One computes `δ = v_L(2√2) = 3` and `d = f·δ = 3`. -/
+This is the specialization of Case 2 to `p = e = 2`.  The extension has
+`[L : ℚ_2] = 2`, `f = 1`, and `e = 2`, so it is wildly ramified.  The proof of
+`δ = 3` identifies the integral root `θ` as a uniformizer, proves the extension
+of rings of integers is monogenic, computes the different as
+`(f'(θ)) = (2θ) = (θ³)`, and then reads off the multiplicity. -/
 section WildQ2
 
 /-- `X² − 2 ∈ ℚ_2[X]`. -/
@@ -497,13 +504,14 @@ theorem Q2sqrt2_finrank : Module.finrank ℚ_[2] Q2sqrt2 = 2 := by
     AdjoinRoot.powerBasis_dim]
   simp [sqrtTwoPoly]
 
-/-- 整的 `√2`：`θ ∈ 𝔪_L` 且 `θ² = (2)`。 -/
+/-- An integral square-root element: `θ ∈ 𝔪_L` and `θ²` is the image of `2`. -/
 theorem Q2sqrt2_exists_integral_root :
     ∃ θ : 𝒪 Q2sqrt2,
       θ ∈ IsLocalRing.maximalIdeal (𝒪 Q2sqrt2) ∧
       θ ^ 2 = algebraMap (𝒪 ℚ_[2]) (𝒪 Q2sqrt2) (pElt 2) := by
   exact Qpe_exists_integral_root (p := 2) 2
 
+/-- The maximal ideal of `𝒪_{ℚ_2}` maps into `𝔪_L²`, using `θ² = 2`. -/
 theorem Q2sqrt2_map_maximalIdeal_le_pow :
     (IsLocalRing.maximalIdeal (𝒪 ℚ_[2])).map (algebraMap (𝒪 ℚ_[2]) (𝒪 Q2sqrt2))
       ≤ (IsLocalRing.maximalIdeal (𝒪 Q2sqrt2)) ^ 2 := by
@@ -511,6 +519,7 @@ theorem Q2sqrt2_map_maximalIdeal_le_pow :
   rw [Qpe_maximalIdeal_eq_span (p := 2), Ideal.map_span, Set.image_singleton, ← hθpow]
   exact span_pow_le_pow 2 hθmem
 
+/-- The ideal containment gives the lower bound `2 ≤ e(L/K)`. -/
 theorem Q2sqrt2_le_ramificationIdx : 2 ≤ ramificationIdx ℚ_[2] Q2sqrt2 := by
   have hinj : Function.Injective (algebraMap (𝒪 ℚ_[2]) (𝒪 Q2sqrt2)) :=
     FaithfulSMul.algebraMap_injective _ _
@@ -563,144 +572,225 @@ lemma exists_maximalIdeal_pow_of_ne_bot {S : Type*} [CommRing S] [IsDomain S]
   obtain ⟨n, hn⟩ := IsDiscreteValuationRing.ideal_eq_span_pow_irreducible hI hϖ
   exact ⟨n, by rw [hn, ← Ideal.span_singleton_pow, ← hϖ.maximalIdeal_eq]⟩
 
-/-- Different exponent `δ = 3` (from `v_L(f'(√2)) = v_L(2√2) = 3`). -/
-theorem Q2sqrt2_differentExponent : differentExponent ℚ_[2] Q2sqrt2 = 3 := by
-  classical
-  haveI : Algebra.IsIntegral (𝒪 ℚ_[2]) (𝒪 Q2sqrt2) := Algebra.IsIntegral.of_finite _ _
-  haveI : Algebra.IsIntegral ℚ_[2] Q2sqrt2 := Algebra.IsIntegral.of_finite _ _
-  haveI : IsScalarTower (𝒪 ℚ_[2]) ℚ_[2] Q2sqrt2 := IsScalarTower.of_algebraMap_eq fun _ => rfl
-  haveI : Module.IsTorsionFree (𝒪 ℚ_[2]) (𝒪 Q2sqrt2) :=
-    Module.isTorsionFree_iff_algebraMap_injective.mpr (FaithfulSMul.algebraMap_injective _ _)
-  obtain ⟨θ, hθmem, hθpow⟩ := Q2sqrt2_exists_integral_root
-  have hpElt2 : pElt 2 = (2 : 𝒪 ℚ_[2]) := Subtype.ext rfl
-  have hmap_two : algebraMap (𝒪 ℚ_[2]) (𝒪 Q2sqrt2) (2 : 𝒪 ℚ_[2]) = (2 : 𝒪 Q2sqrt2) :=
-    Subtype.ext rfl
-  have hθne : θ ≠ 0 := fun h => by
-    rw [h, zero_pow (by norm_num)] at hθpow
-    exact absurd ((map_eq_zero_iff _ (FaithfulSMul.algebraMap_injective _ _)).mp hθpow.symm)
-      (by simp only [pElt]; rw [map_eq_zero_iff _ (FaithfulSMul.algebraMap_injective ℤ_[2] _)];
-          norm_num)
+/-- The ramification computation identifies the extension of the base maximal ideal. -/
+lemma Q2sqrt2_map_maximalIdeal_eq_pow :
+    (IsLocalRing.maximalIdeal (𝒪 ℚ_[2])).map (algebraMap (𝒪 ℚ_[2]) (𝒪 Q2sqrt2))
+      = (IsLocalRing.maximalIdeal (𝒪 Q2sqrt2)) ^ 2 := by
+  obtain ⟨m, hm⟩ := exists_maximalIdeal_pow_of_ne_bot (by
+    rw [Ne, Ideal.map_eq_bot_iff_of_injective
+      (FaithfulSMul.algebraMap_injective (𝒪 ℚ_[2]) (𝒪 Q2sqrt2))]
+    exact IsDiscreteValuationRing.not_a_field (𝒪 ℚ_[2]))
   have hstrictL : StrictAnti (fun n : ℕ => (IsLocalRing.maximalIdeal (𝒪 Q2sqrt2)) ^ n) :=
     Ideal.pow_right_strictAnti _ (IsDiscreteValuationRing.not_a_field _)
       (IsLocalRing.maximalIdeal.isMaximal _).ne_top
-  have hmapId : (IsLocalRing.maximalIdeal (𝒪 ℚ_[2])).map (algebraMap (𝒪 ℚ_[2]) (𝒪 Q2sqrt2))
-      = (IsLocalRing.maximalIdeal (𝒪 Q2sqrt2)) ^ 2 := by
-    obtain ⟨m, hm⟩ := exists_maximalIdeal_pow_of_ne_bot (by
-      rw [Ne, Ideal.map_eq_bot_iff_of_injective
-        (FaithfulSMul.algebraMap_injective (𝒪 ℚ_[2]) (𝒪 Q2sqrt2))]
-      exact IsDiscreteValuationRing.not_a_field (𝒪 ℚ_[2]))
-    have hram : ramificationIdx ℚ_[2] Q2sqrt2 = m := by
-      show Ideal.ramificationIdx (R := 𝒪 ℚ_[2]) (S := 𝒪 Q2sqrt2)
-        (IsLocalRing.maximalIdeal (𝒪 ℚ_[2])) (IsLocalRing.maximalIdeal (𝒪 Q2sqrt2)) = m
-      refine Ideal.ramificationIdx_spec (le_of_eq hm) ?_
-      rw [hm]
-      exact (hstrictL (Nat.lt_succ_self m)).2
-    rw [Q2sqrt2_ramificationIdx] at hram; rw [hm, ← hram]
-  have huniformizer : IsLocalRing.maximalIdeal (𝒪 Q2sqrt2) = Ideal.span {θ} := by
-    have hsqfull : Ideal.span {θ} ^ 2 = (IsLocalRing.maximalIdeal (𝒪 Q2sqrt2)) ^ 2 := by
-      rw [← hmapId, Ideal.span_singleton_pow, hθpow, Qpe_maximalIdeal_eq_span (p := 2),
-        Ideal.map_span, Set.image_singleton]
-    obtain ⟨n, hn⟩ := exists_maximalIdeal_pow_of_ne_bot (I := Ideal.span {θ})
-      (by rwa [Ne, Ideal.span_singleton_eq_bot])
-    have hn1 : n = 1 := by
-      have hpow : (IsLocalRing.maximalIdeal (𝒪 Q2sqrt2)) ^ (n * 2)
-          = (IsLocalRing.maximalIdeal (𝒪 Q2sqrt2)) ^ 2 := by
-        rw [← hsqfull, hn, ← pow_mul]
-      have := hstrictL.injective hpow
-      omega
-    rw [hn, hn1, pow_one]
-  have hθirr : Irreducible θ :=
-    IsDiscreteValuationRing.irreducible_of_span_eq_maximalIdeal θ hθne huniformizer
-  haveI hlh : IsLocalHom (algebraMap (𝒪 ℚ_[2]) (𝒪 Q2sqrt2)) := by
-    have hcomap : Ideal.comap (algebraMap (𝒪 ℚ_[2]) (𝒪 Q2sqrt2))
-        (IsLocalRing.maximalIdeal (𝒪 Q2sqrt2)) = IsLocalRing.maximalIdeal (𝒪 ℚ_[2]) :=
-      Ideal.LiesOver.over.symm
-    exact ((IsLocalRing.local_hom_TFAE (algebraMap (𝒪 ℚ_[2]) (𝒪 Q2sqrt2))).out 4 0).mp hcomap
-  have hfr : Module.finrank (IsLocalRing.ResidueField (𝒪 ℚ_[2]))
+  have hram : ramificationIdx ℚ_[2] Q2sqrt2 = m := by
+    show Ideal.ramificationIdx (R := 𝒪 ℚ_[2]) (S := 𝒪 Q2sqrt2)
+      (IsLocalRing.maximalIdeal (𝒪 ℚ_[2])) (IsLocalRing.maximalIdeal (𝒪 Q2sqrt2)) = m
+    refine Ideal.ramificationIdx_spec (le_of_eq hm) ?_
+    rw [hm]
+    exact (hstrictL (Nat.lt_succ_self m)).2
+  rw [Q2sqrt2_ramificationIdx] at hram
+  rw [hm, ← hram]
+
+/-- Any integral root with square `2` is nonzero. -/
+lemma Q2sqrt2_integral_root_ne_zero {θ : 𝒪 Q2sqrt2}
+    (hθpow : θ ^ 2 = algebraMap (𝒪 ℚ_[2]) (𝒪 Q2sqrt2) (pElt 2)) : θ ≠ 0 := fun h => by
+  rw [h, zero_pow (by norm_num)] at hθpow
+  exact absurd ((map_eq_zero_iff _ (FaithfulSMul.algebraMap_injective _ _)).mp hθpow.symm)
+    (by
+      simp only [pElt]
+      rw [map_eq_zero_iff _ (FaithfulSMul.algebraMap_injective ℤ_[2] _)]
+      norm_num)
+
+/-- The integral square root of `2` is a uniformizer of `𝒪_{ℚ_2(√2)}`. -/
+lemma Q2sqrt2_maximalIdeal_eq_span_root {θ : 𝒪 Q2sqrt2}
+    (hθpow : θ ^ 2 = algebraMap (𝒪 ℚ_[2]) (𝒪 Q2sqrt2) (pElt 2)) :
+    IsLocalRing.maximalIdeal (𝒪 Q2sqrt2) = Ideal.span {θ} := by
+  have hstrictL : StrictAnti (fun n : ℕ => (IsLocalRing.maximalIdeal (𝒪 Q2sqrt2)) ^ n) :=
+    Ideal.pow_right_strictAnti _ (IsDiscreteValuationRing.not_a_field _)
+      (IsLocalRing.maximalIdeal.isMaximal _).ne_top
+  have hsqfull : Ideal.span {θ} ^ 2 = (IsLocalRing.maximalIdeal (𝒪 Q2sqrt2)) ^ 2 := by
+    rw [← Q2sqrt2_map_maximalIdeal_eq_pow, Ideal.span_singleton_pow, hθpow,
+      Qpe_maximalIdeal_eq_span (p := 2), Ideal.map_span, Set.image_singleton]
+  obtain ⟨n, hn⟩ := exists_maximalIdeal_pow_of_ne_bot (I := Ideal.span {θ})
+    (by simpa [Ideal.span_singleton_eq_bot] using Q2sqrt2_integral_root_ne_zero hθpow)
+  have hn1 : n = 1 := by
+    have hpow : (IsLocalRing.maximalIdeal (𝒪 Q2sqrt2)) ^ (n * 2)
+        = (IsLocalRing.maximalIdeal (𝒪 Q2sqrt2)) ^ 2 := by
+      rw [← hsqfull, hn, ← pow_mul]
+    have := hstrictL.injective hpow
+    omega
+  rw [hn, hn1, pow_one]
+
+/-- The integral square root of `2` is irreducible in the DVR `𝒪_{ℚ_2(√2)}`. -/
+lemma Q2sqrt2_integral_root_irreducible {θ : 𝒪 Q2sqrt2}
+    (hθpow : θ ^ 2 = algebraMap (𝒪 ℚ_[2]) (𝒪 Q2sqrt2) (pElt 2)) :
+    Irreducible θ :=
+  IsDiscreteValuationRing.irreducible_of_span_eq_maximalIdeal θ
+    (Q2sqrt2_integral_root_ne_zero hθpow) (Q2sqrt2_maximalIdeal_eq_span_root hθpow)
+
+instance instQ2sqrt2IsLocalHom :
+    IsLocalHom (algebraMap (𝒪 ℚ_[2]) (𝒪 Q2sqrt2)) := by
+  have hcomap : Ideal.comap (algebraMap (𝒪 ℚ_[2]) (𝒪 Q2sqrt2))
+      (IsLocalRing.maximalIdeal (𝒪 Q2sqrt2)) = IsLocalRing.maximalIdeal (𝒪 ℚ_[2]) :=
+    Ideal.LiesOver.over.symm
+  exact ((IsLocalRing.local_hom_TFAE (algebraMap (𝒪 ℚ_[2]) (𝒪 Q2sqrt2))).out 4 0).mp hcomap
+
+lemma Q2sqrt2_residue_finrank :
+    Module.finrank (IsLocalRing.ResidueField (𝒪 ℚ_[2]))
       (IsLocalRing.ResidueField (𝒪 Q2sqrt2)) = 1 := by
-    have h : Ideal.inertiaDeg (IsLocalRing.maximalIdeal (𝒪 ℚ_[2]))
-        (IsLocalRing.maximalIdeal (𝒪 Q2sqrt2)) = 1 := Q2sqrt2_inertiaDeg
-    rwa [Ideal.inertiaDeg_algebraMap] at h
-  have hξ_prim : IntermediateField.adjoin (IsLocalRing.ResidueField (𝒪 ℚ_[2]))
+  have h : Ideal.inertiaDeg (IsLocalRing.maximalIdeal (𝒪 ℚ_[2]))
+      (IsLocalRing.maximalIdeal (𝒪 Q2sqrt2)) = 1 := Q2sqrt2_inertiaDeg
+  rwa [Ideal.inertiaDeg_algebraMap] at h
+
+/-- In this totally ramified quadratic, any residue element already generates the residue field. -/
+lemma Q2sqrt2_residue_adjoin_eq_top (θ : 𝒪 Q2sqrt2) :
+    IntermediateField.adjoin (IsLocalRing.ResidueField (𝒪 ℚ_[2]))
       ({IsLocalRing.residue (𝒪 Q2sqrt2) θ} :
         Set (IsLocalRing.ResidueField (𝒪 Q2sqrt2))) = ⊤ := by
-    have hbot : (⊤ : IntermediateField (IsLocalRing.ResidueField (𝒪 ℚ_[2]))
-        (IsLocalRing.ResidueField (𝒪 Q2sqrt2))) = ⊥ := by
-      rw [← IntermediateField.finrank_eq_one_iff, IntermediateField.finrank_top']
-      exact hfr
-    rw [eq_top_iff, hbot]; exact bot_le
-  have hadjθ : Algebra.adjoin (𝒪 ℚ_[2]) ({θ} : Set (𝒪 Q2sqrt2)) = ⊤ := by
-    have h := Neukirch.Chapter2.Sections8to10.mono_adjoin_two_gen θ θ hξ_prim hθirr
-    rwa [Set.pair_eq_singleton] at h
-  have hcond : conductor (𝒪 ℚ_[2]) θ = ⊤ := by
-    rw [Ideal.eq_top_iff_one, mem_conductor_iff]
-    intro b
-    rw [one_mul, hadjθ]
-    exact Algebra.mem_top
-  have h2θ : (2 : 𝒪 Q2sqrt2) = θ ^ 2 := by
-    rw [hθpow, hpElt2, map_ofNat]
-  have hθ_int : IsIntegral (𝒪 ℚ_[2]) θ := Algebra.IsIntegral.isIntegral θ
-  set x := algebraMap (𝒪 Q2sqrt2) Q2sqrt2 θ with hxdef
-  have hxL_int : IsIntegral ℚ_[2] x := Algebra.IsIntegral.isIntegral x
-  have hx_sq : x ^ 2 = (2 : Q2sqrt2) := by
-    rw [hxdef, ← map_pow, hθpow, hpElt2, hmap_two]
-    rfl
-  have hmin_x : minpoly ℚ_[2] x = sqrtTwoPoly := by
-    refine (minpoly.eq_of_irreducible_of_monic (Fact.out : Irreducible sqrtTwoPoly) ?_ ?_).symm
-    · change Polynomial.aeval x (X ^ 2 - C (2 : ℚ_[2])) = 0
-      simp only [Polynomial.aeval_sub, Polynomial.aeval_X, map_pow, Polynomial.aeval_C]
-      rw [hx_sq]
-      change (2 : Q2sqrt2) - (2 : Q2sqrt2) = 0
-      norm_num
-    · exact (monic_X_pow_sub_C _ (by norm_num))
-  have hxK : Algebra.adjoin ℚ_[2] {x} = ⊤ := by
-    have hsub : (Algebra.adjoin ℚ_[2] {x}).toSubmodule = ⊤ := by
-      apply Submodule.eq_top_of_finrank_eq
-      show Module.finrank ℚ_[2] ↥(Algebra.adjoin ℚ_[2] {x}) = Module.finrank ℚ_[2] Q2sqrt2
-      rw [(Algebra.adjoin.powerBasis' hxL_int).finrank, Algebra.adjoin.powerBasis'_dim,
-        hmin_x, Q2sqrt2_finrank]
-      simp [sqrtTwoPoly]
-    have htop : (⊤ : Subalgebra ℚ_[2] Q2sqrt2).toSubmodule = (⊤ : Submodule ℚ_[2] Q2sqrt2) := by
-      ext y; simp
-    exact Subalgebra.toSubmodule_injective (hsub.trans htop.symm)
+  have hbot : (⊤ : IntermediateField (IsLocalRing.ResidueField (𝒪 ℚ_[2]))
+      (IsLocalRing.ResidueField (𝒪 Q2sqrt2))) = ⊥ := by
+    rw [← IntermediateField.finrank_eq_one_iff, IntermediateField.finrank_top']
+    exact Q2sqrt2_residue_finrank
+  rw [eq_top_iff, hbot]
+  exact bot_le
+
+/-- The integral square root generates the ring of integers. -/
+lemma Q2sqrt2_adjoin_integral_root_eq_top {θ : 𝒪 Q2sqrt2}
+    (hθpow : θ ^ 2 = algebraMap (𝒪 ℚ_[2]) (𝒪 Q2sqrt2) (pElt 2)) :
+    Algebra.adjoin (𝒪 ℚ_[2]) ({θ} : Set (𝒪 Q2sqrt2)) = ⊤ := by
+  have h := Monogenicity.mono_adjoin_two_gen θ θ
+    (Q2sqrt2_residue_adjoin_eq_top θ) (Q2sqrt2_integral_root_irreducible hθpow)
+  rwa [Set.pair_eq_singleton] at h
+
+/-- The conductor of the integral square-root order is the unit ideal. -/
+lemma Q2sqrt2_conductor_eq_top {θ : 𝒪 Q2sqrt2}
+    (hθpow : θ ^ 2 = algebraMap (𝒪 ℚ_[2]) (𝒪 Q2sqrt2) (pElt 2)) :
+    conductor (𝒪 ℚ_[2]) θ = ⊤ := by
+  rw [Ideal.eq_top_iff_one, mem_conductor_iff]
+  intro b
+  rw [one_mul, Q2sqrt2_adjoin_integral_root_eq_top hθpow]
+  exact Algebra.mem_top
+
+instance instQ2sqrt2IntegralIntegers :
+    Algebra.IsIntegral (𝒪 ℚ_[2]) (𝒪 Q2sqrt2) :=
+  Algebra.IsIntegral.of_finite _ _
+
+instance instQ2sqrt2IntegralField :
+    Algebra.IsIntegral ℚ_[2] Q2sqrt2 :=
+  Algebra.IsIntegral.of_finite _ _
+
+instance instQ2sqrt2IntegerFieldTower :
+    IsScalarTower (𝒪 ℚ_[2]) ℚ_[2] Q2sqrt2 :=
+  IsScalarTower.of_algebraMap_eq fun _ => rfl
+
+instance instQ2sqrt2TorsionFreeIntegers :
+    Module.IsTorsionFree (𝒪 ℚ_[2]) (𝒪 Q2sqrt2) :=
+  Module.isTorsionFree_iff_algebraMap_injective.mpr (FaithfulSMul.algebraMap_injective _ _)
+
+/-- The field image of an integral square root still squares to `2`. -/
+lemma Q2sqrt2_field_root_sq {θ : 𝒪 Q2sqrt2}
+    (hθpow : θ ^ 2 = algebraMap (𝒪 ℚ_[2]) (𝒪 Q2sqrt2) (pElt 2)) :
+    (algebraMap (𝒪 Q2sqrt2) Q2sqrt2 θ) ^ 2 = (2 : Q2sqrt2) := by
+  rw [← map_pow, hθpow, (show pElt 2 = (2 : 𝒪 ℚ_[2]) from Subtype.ext rfl),
+    (show algebraMap (𝒪 ℚ_[2]) (𝒪 Q2sqrt2) (2 : 𝒪 ℚ_[2]) = (2 : 𝒪 Q2sqrt2) from
+      Subtype.ext rfl)]
+  rfl
+
+/-- The field minimal polynomial of the integral square root is `X² - 2`. -/
+lemma Q2sqrt2_minpoly_field_root {θ : 𝒪 Q2sqrt2}
+    (hθpow : θ ^ 2 = algebraMap (𝒪 ℚ_[2]) (𝒪 Q2sqrt2) (pElt 2)) :
+    minpoly ℚ_[2] (algebraMap (𝒪 Q2sqrt2) Q2sqrt2 θ) = sqrtTwoPoly := by
+  refine (minpoly.eq_of_irreducible_of_monic (Fact.out : Irreducible sqrtTwoPoly) ?_ ?_).symm
+  · change Polynomial.aeval (algebraMap (𝒪 Q2sqrt2) Q2sqrt2 θ)
+      (X ^ 2 - C (2 : ℚ_[2])) = 0
+    simp only [Polynomial.aeval_sub, Polynomial.aeval_X, map_pow, Polynomial.aeval_C]
+    rw [Q2sqrt2_field_root_sq hθpow]
+    change (2 : Q2sqrt2) - (2 : Q2sqrt2) = 0
+    norm_num
+  · exact monic_X_pow_sub_C _ (by norm_num)
+
+/-- The field image of the integral square root generates `ℚ_2(√2)`. -/
+lemma Q2sqrt2_adjoin_field_root_eq_top {θ : 𝒪 Q2sqrt2}
+    (hθpow : θ ^ 2 = algebraMap (𝒪 ℚ_[2]) (𝒪 Q2sqrt2) (pElt 2)) :
+    Algebra.adjoin ℚ_[2] {algebraMap (𝒪 Q2sqrt2) Q2sqrt2 θ} = ⊤ := by
+  have hsub : (Algebra.adjoin ℚ_[2] {algebraMap (𝒪 Q2sqrt2) Q2sqrt2 θ}).toSubmodule = ⊤ := by
+    apply Submodule.eq_top_of_finrank_eq
+    show Module.finrank ℚ_[2]
+        ↥(Algebra.adjoin ℚ_[2] {algebraMap (𝒪 Q2sqrt2) Q2sqrt2 θ}) =
+      Module.finrank ℚ_[2] Q2sqrt2
+    rw [(Algebra.adjoin.powerBasis' (Algebra.IsIntegral.isIntegral
+        (algebraMap (𝒪 Q2sqrt2) Q2sqrt2 θ))).finrank,
+      Algebra.adjoin.powerBasis'_dim, Q2sqrt2_minpoly_field_root hθpow, Q2sqrt2_finrank]
+    simp [sqrtTwoPoly]
+  have htop : (⊤ : Subalgebra ℚ_[2] Q2sqrt2).toSubmodule =
+      (⊤ : Submodule ℚ_[2] Q2sqrt2) := by
+    ext y
+    simp
+  exact Subalgebra.toSubmodule_injective (hsub.trans htop.symm)
+
+/-- The integral minimal polynomial of the square-root generator is `X² - 2`. -/
+lemma Q2sqrt2_minpoly_integral_root {θ : 𝒪 Q2sqrt2}
+    (hθpow : θ ^ 2 = algebraMap (𝒪 ℚ_[2]) (𝒪 Q2sqrt2) (pElt 2)) :
+    minpoly (𝒪 ℚ_[2]) θ = X ^ 2 - C (pElt 2) := by
   have hmapC : (X ^ 2 - C (pElt 2) : Polynomial (𝒪 ℚ_[2])).map
       (algebraMap (𝒪 ℚ_[2]) ℚ_[2]) = sqrtTwoPoly := by
     rw [Polynomial.map_sub, Polynomial.map_pow, Polynomial.map_X, Polynomial.map_C,
-      sqrtTwoPoly, hpElt2, map_ofNat]
-  have hmap_min : (minpoly (𝒪 ℚ_[2]) θ).map (algebraMap (𝒪 ℚ_[2]) ℚ_[2]) = sqrtTwoPoly := by
-    have h := minpoly.isIntegrallyClosed_eq_field_fractions ℚ_[2] Q2sqrt2 hθ_int
-    rw [hmin_x] at h
+      sqrtTwoPoly, (show pElt 2 = (2 : 𝒪 ℚ_[2]) from Subtype.ext rfl), map_ofNat]
+  have hmap_min : (minpoly (𝒪 ℚ_[2]) θ).map (algebraMap (𝒪 ℚ_[2]) ℚ_[2]) =
+      sqrtTwoPoly := by
+    have h := minpoly.isIntegrallyClosed_eq_field_fractions ℚ_[2] Q2sqrt2
+      (Algebra.IsIntegral.isIntegral (R := 𝒪 ℚ_[2]) θ)
+    rw [Q2sqrt2_minpoly_field_root hθpow] at h
     exact h.symm
-  have hmin_O : minpoly (𝒪 ℚ_[2]) θ = X ^ 2 - C (pElt 2) := by
-    have hinj : Function.Injective (Polynomial.map (algebraMap (𝒪 ℚ_[2]) ℚ_[2])) :=
-      Polynomial.map_injective _ (IsFractionRing.injective (𝒪 ℚ_[2]) ℚ_[2])
-    apply hinj
-    rw [hmap_min, hmapC]
-  have hderiv : Polynomial.aeval θ (Polynomial.derivative (minpoly (𝒪 ℚ_[2]) θ)) = θ ^ 3 := by
-    have hstep : Polynomial.aeval θ (Polynomial.derivative (minpoly (𝒪 ℚ_[2]) θ))
-        = 2 * θ := by
-      rw [hmin_O, Polynomial.derivative_sub, Polynomial.derivative_X_pow,
-        Polynomial.derivative_C, sub_zero]
-      norm_num [Polynomial.aeval_mul, hmap_two]
-    rw [hstep]
-    calc (2 : 𝒪 Q2sqrt2) * θ = (θ ^ 2) * θ := by rw [h2θ]
-      _ = θ ^ 3 := by ring
-  have hdiff : differentIdeal (𝒪 ℚ_[2]) (𝒪 Q2sqrt2) =
+  apply Polynomial.map_injective _ (IsFractionRing.injective (𝒪 ℚ_[2]) ℚ_[2])
+  rw [hmap_min, hmapC]
+
+/-- The derivative of the integral minimal polynomial evaluates to `θ³`. -/
+lemma Q2sqrt2_aeval_derivative_minpoly {θ : 𝒪 Q2sqrt2}
+    (hθpow : θ ^ 2 = algebraMap (𝒪 ℚ_[2]) (𝒪 Q2sqrt2) (pElt 2)) :
+    Polynomial.aeval θ (Polynomial.derivative (minpoly (𝒪 ℚ_[2]) θ)) = θ ^ 3 := by
+  rw [Q2sqrt2_minpoly_integral_root hθpow, Polynomial.derivative_sub,
+    Polynomial.derivative_X_pow, Polynomial.derivative_C, sub_zero]
+  norm_num [Polynomial.aeval_mul,
+    (show algebraMap (𝒪 ℚ_[2]) (𝒪 Q2sqrt2) (2 : 𝒪 ℚ_[2]) = (2 : 𝒪 Q2sqrt2) from
+      Subtype.ext rfl)]
+  rw [(show (2 : 𝒪 Q2sqrt2) = θ ^ 2 by
+    rw [hθpow, (show pElt 2 = (2 : 𝒪 ℚ_[2]) from Subtype.ext rfl), map_ofNat])]
+  ring
+
+/-- The different ideal is generated by the derivative at the square-root generator. -/
+lemma Q2sqrt2_differentIdeal_eq_span_derivative {θ : 𝒪 Q2sqrt2}
+    (hθpow : θ ^ 2 = algebraMap (𝒪 ℚ_[2]) (𝒪 Q2sqrt2) (pElt 2)) :
+    differentIdeal (𝒪 ℚ_[2]) (𝒪 Q2sqrt2) =
       Ideal.span {Polynomial.aeval θ (Polynomial.derivative (minpoly (𝒪 ℚ_[2]) θ))} := by
-    have h := conductor_mul_differentIdeal (𝒪 ℚ_[2]) ℚ_[2] Q2sqrt2 θ hxK
-    rwa [hcond, Ideal.top_mul] at h
-  have hdiff3 : differentIdeal (𝒪 ℚ_[2]) (𝒪 Q2sqrt2)
-      = (IsLocalRing.maximalIdeal (𝒪 Q2sqrt2)) ^ 3 := by
-    rw [hdiff, hderiv, ← Ideal.span_singleton_pow, ← huniformizer]
-  have hfinal : multiplicity (IsLocalRing.maximalIdeal (𝒪 Q2sqrt2))
-      ((IsLocalRing.maximalIdeal (𝒪 Q2sqrt2)) ^ 3) = 3 := by
-    refine multiplicity_pow_self ?_ ?_ 3
-    · rw [Ideal.zero_eq_bot]; exact IsDiscreteValuationRing.not_a_field (𝒪 Q2sqrt2)
-    · exact Ideal.isUnit_iff.not.mpr (IsLocalRing.maximalIdeal.isMaximal (𝒪 Q2sqrt2)).ne_top
-  show multiplicity (IsLocalRing.maximalIdeal (𝒪 Q2sqrt2))
+  have h := conductor_mul_differentIdeal (𝒪 ℚ_[2]) ℚ_[2] Q2sqrt2 θ
+    (Q2sqrt2_adjoin_field_root_eq_top hθpow)
+  rwa [Q2sqrt2_conductor_eq_top hθpow, Ideal.top_mul] at h
+
+/-- The different ideal of `ℚ_2(√2)/ℚ_2` is `𝔪_L³`. -/
+lemma Q2sqrt2_differentIdeal_eq_pow :
+    differentIdeal (𝒪 ℚ_[2]) (𝒪 Q2sqrt2) =
+      (IsLocalRing.maximalIdeal (𝒪 Q2sqrt2)) ^ 3 := by
+  obtain ⟨θ, _hθmem, hθpow⟩ := Q2sqrt2_exists_integral_root
+  rw [Q2sqrt2_differentIdeal_eq_span_derivative (θ := θ) hθpow,
+    Q2sqrt2_aeval_derivative_minpoly hθpow, ← Ideal.span_singleton_pow,
+    ← Q2sqrt2_maximalIdeal_eq_span_root hθpow]
+
+/-- Multiplicity of the third power of the maximal ideal is `3`. -/
+lemma Q2sqrt2_multiplicity_maximalIdeal_pow_three :
+    multiplicity (IsLocalRing.maximalIdeal (𝒪 Q2sqrt2))
+      ((IsLocalRing.maximalIdeal (𝒪 Q2sqrt2)) ^ 3) = 3 :=
+  multiplicity_pow_self
+    (by rw [Ideal.zero_eq_bot]; exact IsDiscreteValuationRing.not_a_field (𝒪 Q2sqrt2))
+    (Ideal.isUnit_iff.not.mpr (IsLocalRing.maximalIdeal.isMaximal (𝒪 Q2sqrt2)).ne_top) 3
+
+/-- Different exponent `δ = 3`, computed from `𝔡_{L/K} = 𝔪_L³`. -/
+theorem Q2sqrt2_differentExponent : differentExponent ℚ_[2] Q2sqrt2 = 3 := by
+  change multiplicity (IsLocalRing.maximalIdeal (𝒪 Q2sqrt2))
     (differentIdeal (𝒪 ℚ_[2]) (𝒪 Q2sqrt2)) = 3
-  rw [hdiff3]
-  exact hfinal
+  rw [Q2sqrt2_differentIdeal_eq_pow]
+  exact Q2sqrt2_multiplicity_maximalIdeal_pow_three
 
 /-- Discriminant exponent `d = f·δ = 3`. -/
 theorem Q2sqrt2_discriminantExponent : discriminantExponent ℚ_[2] Q2sqrt2 = 3 := by

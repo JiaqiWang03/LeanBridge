@@ -1,6 +1,6 @@
 import Mathlib
 
-namespace Neukirch.Chapter2.Sections8to10
+namespace Monogenicity
 
 open scoped WithZero
 
@@ -27,7 +27,7 @@ variable
 
 /-- A uniformizer has zero residue. -/
 lemma mono_residue_uniformizer_eq_zero {π : 𝒪} (hπ : Irreducible π) :
-    IsLocalRing.residue 𝒪 π = 0 := by  -- (extracted by Fuse golfer)
+    IsLocalRing.residue 𝒪 π = 0 := by
   rw [IsLocalRing.residue_eq_zero_iff, hπ.maximalIdeal_eq]
   exact Ideal.mem_span_singleton_self π
 
@@ -321,4 +321,4 @@ theorem mono_exists_primitive
   · rw [Set.mem_singleton_iff] at hy
     rw [hy]; exact hϖ_mem
 
-end Neukirch.Chapter2.Sections8to10
+end Monogenicity
