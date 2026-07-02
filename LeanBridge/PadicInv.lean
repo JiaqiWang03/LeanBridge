@@ -2,6 +2,7 @@ import Mathlib
 import LeanBridge.Mono
 import LeanBridge.DiscrAssoc
 import LeanBridge.DiscrNormPB
+import LeanBridge.DedekindTame
 
 /-!
 # Invariants of `p`-adic fields: the field and its ring of integers

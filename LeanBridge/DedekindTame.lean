@@ -259,7 +259,7 @@ theorem intTrace_residue_scaling
         (algebraMap (R ⧸ p) (S ⧸ Ideal.map (algebraMap R S) p)) := by
     refine RingHom.ext fun z => ?_
     obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective z
-    simp only [RingHom.comp_apply, RingEquiv.coe_ringHom_refl, id_eq,
+    simp only [RingHom.comp_apply, RingEquiv.coe_ringHom_refl, id_eq, RingHom.id_apply,
       Ideal.Quotient.algebraMap_quotient_pow_ramificationIdx,
       Ideal.Quotient.algebraMap_quotient_map_quotient,
       RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom, Ideal.quotEquivOfEq_mk]
