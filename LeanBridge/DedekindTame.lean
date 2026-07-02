@@ -176,6 +176,97 @@ theorem trace_mulPow_succ (x : S) (hP0 : P ≠ ⊥) {i : ℕ} (hi : i < e) :
   rw [trace_mulPow_restrict_range x i, trace_mulPow_mapQ x hP0 hi] at h
   rw [h, add_comm]
 
+/-- Common finiteness/tower instances for the quotient `S / P^e` as an `R/p`-module. -/
+private theorem instFin_aux :
+    Module.Finite R (S ⧸ P ^ e) ∧ FiniteDimensional (R ⧸ p) (S ⧸ P ^ e) := by
+  haveI : Module.Finite R (S ⧸ P ^ e) :=
+    Module.Finite.of_surjective (Ideal.Quotient.mkₐ R (P ^ e)).toLinearMap
+      Ideal.Quotient.mk_surjective
+  haveI : IsScalarTower R (R ⧸ p) (S ⧸ P ^ e) :=
+    IsScalarTower.of_algebraMap_eq fun _ => rfl
+  exact ⟨inferInstance, Module.Finite.of_restrictScalars_finite R (R ⧸ p) (S ⧸ P ^ e)⟩
+
+set_option maxHeartbeats 1000000 in
+/-- Telescoping the per-step identity: the trace of `mulPow x 0` on `P^0/P^e` equals
+`e` times the residue trace of `x`. -/
+theorem trace_mulPow_zero_eq_nsmul (x : S) (hP0 : P ≠ ⊥) :
+    LinearMap.trace (R ⧸ p) (Ideal.map (Ideal.Quotient.mk (P ^ e)) (P ^ 0)) (mulPow x 0) =
+      e • Algebra.trace (R ⧸ p) (S ⧸ P) (Ideal.Quotient.mk P x) := by
+  haveI : Module.Finite R (S ⧸ P ^ e) := instFin_aux.1
+  haveI : FiniteDimensional (R ⧸ p) (S ⧸ P ^ e) := instFin_aux.2
+  -- Auxiliary telescoping statement.
+  have aux : ∀ i, i ≤ e →
+      LinearMap.trace (R ⧸ p) (Ideal.map (Ideal.Quotient.mk (P ^ e)) (P ^ 0)) (mulPow x 0) =
+        i • Algebra.trace (R ⧸ p) (S ⧸ P) (Ideal.Quotient.mk P x) +
+          LinearMap.trace (R ⧸ p) (Ideal.map (Ideal.Quotient.mk (P ^ e)) (P ^ i)) (mulPow x i) := by
+    intro i
+    induction i with
+    | zero => intro _; simp
+    | succ n ih =>
+      intro hn
+      rw [ih (Nat.le_of_succ_le hn), trace_mulPow_succ x hP0 (Nat.lt_of_succ_le hn),
+        succ_nsmul]
+      ring
+  have hterm : LinearMap.trace (R ⧸ p)
+      (Ideal.map (Ideal.Quotient.mk (P ^ e)) (P ^ e)) (mulPow x e) = 0 := by
+    haveI : Subsingleton ↥(Ideal.map (Ideal.Quotient.mk (P ^ e)) (P ^ e)) := by
+      rw [Ideal.map_quotient_self]; infer_instance
+    rw [Subsingleton.elim (mulPow x e) 0, map_zero]
+  rw [aux e le_rfl, hterm, add_zero]
+
+set_option maxHeartbeats 1000000 in
+/-- **Core trace formula.** For the (non-reduced) quotient `S / P^e`, the trace of
+multiplication by `x` equals `e` times the residue-field trace of `x`. -/
+theorem algebra_trace_quot_pow_eq_nsmul (x : S) (hP0 : P ≠ ⊥) :
+    Algebra.trace (R ⧸ p) (S ⧸ P ^ e) (Ideal.Quotient.mk (P ^ e) x) =
+      e • Algebra.trace (R ⧸ p) (S ⧸ P) (Ideal.Quotient.mk P x) := by
+  haveI : Module.Finite R (S ⧸ P ^ e) := instFin_aux.1
+  haveI : FiniteDimensional (R ⧸ p) (S ⧸ P ^ e) := instFin_aux.2
+  rw [← trace_mulPow_zero_eq_nsmul x hP0]
+  -- identify `mulPow x 0` on `P^0/P^e = ⊤` with `mulLeft (mk x)` on `S/P^e`.
+  set N := Ideal.map (Ideal.Quotient.mk (P ^ e)) (P ^ 0) with hN
+  have hNtop : N = ⊤ := by rw [hN, pow_zero, Ideal.one_eq_top, Ideal.map_top]
+  have hsurj : Function.Surjective ⇑(N.subtype) := by
+    rw [← LinearMap.range_eq_top, Submodule.range_subtype, hNtop]
+  set ε : ↥N ≃ₗ[R ⧸ p] (S ⧸ P ^ e) :=
+    LinearEquiv.ofBijective (N.subtype.restrictScalars (R ⧸ p))
+      ⟨fun a b h => Subtype.ext h, hsurj⟩ with hε
+  have hfwd : ∀ z : ↥N, (ε z : S ⧸ P ^ e) = (z : S ⧸ P ^ e) := fun _ => rfl
+  have hcoe : ∀ w : S ⧸ P ^ e, ((ε.symm w : ↥N) : S ⧸ P ^ e) = w :=
+    fun w => ε.apply_symm_apply w
+  have hconj : mulPow x 0 =
+      ε.symm.conj (Algebra.lmul (R ⧸ p) (S ⧸ P ^ e) (Ideal.Quotient.mk (P ^ e) x)) := by
+    ext y
+    simp only [LinearEquiv.conj_apply, LinearMap.coe_comp, LinearEquiv.coe_coe,
+      Function.comp_apply, LinearEquiv.symm_symm, mulPow_coe_apply,
+      Algebra.coe_lmul_eq_mul, LinearMap.mul_apply', hfwd, hcoe]
+  rw [Algebra.trace_apply, hconj, LinearMap.trace_conj']
+
+set_option maxHeartbeats 1000000 in
+/-- **Bridge to the integral trace.** When `p S = P^e` (e.g. `P` is the unique prime of
+`S` over `p`), the integral trace of `x` reduces mod `p` to `e` times the residue-field
+trace of `x`. -/
+theorem intTrace_residue_scaling
+    [IsDedekindDomain R] [IsDomain S] [Module.IsTorsionFree R S] [IsIntegrallyClosed S]
+    (x : S) (hP0 : P ≠ ⊥) (hpe : Ideal.map (algebraMap R S) p = P ^ e) :
+    Ideal.Quotient.mk p (Algebra.intTrace R S x) =
+      e • Algebra.trace (R ⧸ p) (S ⧸ P) (Ideal.Quotient.mk P x) := by
+  rw [← algebra_trace_quot_pow_eq_nsmul x hP0,
+    ← Algebra.trace_quotient_eq_of_isDedekindDomain (p := p) (x := x)]
+  have he : RingHom.comp (algebraMap (R ⧸ p) (S ⧸ P ^ e))
+        ((RingEquiv.refl (R ⧸ p)) : (R ⧸ p) →+* (R ⧸ p)) =
+      RingHom.comp ((Ideal.quotEquivOfEq hpe) : (S ⧸ Ideal.map (algebraMap R S) p) →+* (S ⧸ P ^ e))
+        (algebraMap (R ⧸ p) (S ⧸ Ideal.map (algebraMap R S) p)) := by
+    refine RingHom.ext fun z => ?_
+    obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective z
+    simp only [RingHom.comp_apply, RingEquiv.coe_ringHom_refl, id_eq,
+      Ideal.Quotient.algebraMap_quotient_pow_ramificationIdx,
+      Ideal.Quotient.algebraMap_quotient_map_quotient,
+      RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom, Ideal.quotEquivOfEq_mk]
+  rw [Algebra.trace_eq_of_equiv_equiv (RingEquiv.refl (R ⧸ p)) (Ideal.quotEquivOfEq hpe) he
+    (Ideal.Quotient.mk (Ideal.map (algebraMap R S) p) x)]
+  simp only [RingEquiv.symm_refl, RingEquiv.coe_refl, id_eq, Ideal.quotEquivOfEq_mk]
+
 end CoreTrace
 
 end DedekindTame
