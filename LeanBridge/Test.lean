@@ -166,17 +166,14 @@ theorem Qpe_finrank : Module.finrank ℚ_[p] (Qpe (p := p) e) = e := by
   simpa [eisenstein] using
     (Polynomial.natDegree_X_pow_sub_C (R := ℚ_[p]) (n := e) (r := (p : ℚ_[p])))
 
-/-- **通用引理 (0):** DVR 中极大理想幂反序:`𝔪^a ≤ 𝔪^b ↔ b ≤ a`。 -/
-private theorem pow_maximalIdeal_antitone {S : Type*} [CommRing S] [IsDomain S]
+lemma pow_maximalIdeal_antitone {S : Type*} [CommRing S] [IsDomain S]
     [IsDiscreteValuationRing S] {a b : ℕ} :
     (IsLocalRing.maximalIdeal S) ^ a ≤ (IsLocalRing.maximalIdeal S) ^ b ↔ b ≤ a := by
   exact (Ideal.pow_right_strictAnti (IsLocalRing.maximalIdeal S)
     (IsDiscreteValuationRing.not_a_field S)
     (IsLocalRing.maximalIdeal.isMaximal S).ne_top).le_iff_ge
 
-/-- **通用引理 (1):** DVR `S` 中，若 `map (algebraMap R S) p` 非零且 `≤ 𝔪_S^n`，
-则 `n ≤ ramificationIdx p 𝔪_S`。 -/
-private theorem le_ramificationIdx_of_map_le_pow
+lemma le_ramificationIdx_of_map_le_pow
     {R S : Type*} [CommRing R] [CommRing S] [IsDomain S] [IsDiscreteValuationRing S]
     [Algebra R S] (p : Ideal R) {n : ℕ}
     (hne : p.map (algebraMap R S) ≠ ⊥)
@@ -199,8 +196,7 @@ private theorem le_ramificationIdx_of_map_le_pow
     exact pow_maximalIdeal_antitone.mp hle
   omega
 
-/-- **组装引理（纯理想论，已证）:** `θ ∈ I ⟹ span {θ^e} ≤ I^e`。 -/
-private theorem span_pow_le_pow {S : Type*} [CommRing S] {θ : S} {I : Ideal S} (m : ℕ)
+lemma span_pow_le_pow {S : Type*} [CommRing S] {θ : S} {I : Ideal S} (m : ℕ)
     (h : θ ∈ I) : Ideal.span {θ ^ m} ≤ I ^ m := by
   rw [← Ideal.span_singleton_pow]
   have hbase : Ideal.span {θ} ≤ I := (Submodule.span_singleton_le_iff_mem θ I).mpr h
@@ -208,30 +204,83 @@ private theorem span_pow_le_pow {S : Type*} [CommRing S] {θ : S} {I : Ideal S} 
   | zero => simp
   | succ k ih => rw [pow_succ, pow_succ]; exact Ideal.mul_mono ih hbase
 
-/-- `p` 视作 `𝒪_K = 𝒪 ℚ_[p]` 中的元素（`ℤ_p` 的一致化子在整数环里的像）。 -/
-private def pElt (p : ℕ) [Fact p.Prime] : 𝒪 ℚ_[p] :=
-  algebraMap ℤ_[p] (𝒪 ℚ_[p]) (p : ℤ_[p])
+abbrev pElt (p : ℕ) [Fact p.Prime] : 𝒪 ℚ_[p] := algebraMap ℤ_[p] (𝒪 ℚ_[p]) (p : ℤ_[p])
 
-/-- **诚实 `sorry` (A) —— `𝔪_K = (p)`。**
-`𝒪_K = integralClosure ℤ_p ℚ_p`；因 `ℤ_p` 在其分式域中整闭，此整闭包即 `ℤ_p` 的像，
-`𝒪_K ≃ ℤ_p`。在此同构下 `𝔪_K` 对应 `𝔪_{ℤ_p} = span {p}`。搬运子代数同构与极大理想
-对应是纯转写工作，暂留 `sorry`。 -/
 theorem Qpe_maximalIdeal_eq_span :
-    IsLocalRing.maximalIdeal (𝒪 ℚ_[p]) = Ideal.span {pElt p} :=
-  sorry
+    IsLocalRing.maximalIdeal (𝒪 ℚ_[p]) = Ideal.span {pElt p} := by
+  have hpmem : (p : ℤ_[p]) ∈ IsLocalRing.maximalIdeal ℤ_[p] := by
+    rw [PadicInt.maximalIdeal_eq_span_p]; exact Ideal.mem_span_singleton_self _
+  have hinj : Function.Injective (algebraMap ℤ_[p] (𝒪 ℚ_[p])) := by
+    exact FaithfulSMul.algebraMap_injective _ _
+  have hsurj : Function.Surjective (algebraMap ℤ_[p] (𝒪 ℚ_[p])) := by
+    rintro ⟨x, hx⟩
+    have hfr : IsFractionRing ℤ_[p] ℚ_[p] := by infer_instance
+    obtain ⟨a, ha⟩ := (IsIntegrallyClosed.isIntegral_iff (R := ℤ_[p]) (K := ℚ_[p])).mp hx
+    refine ⟨a, Subtype.ext ?_⟩
+    exact ha
+  let equivOI : ℤ_[p] ≃+* 𝒪 ℚ_[p] :=
+    RingEquiv.ofBijective (algebraMap ℤ_[p] (𝒪 ℚ_[p])) ⟨hinj, hsurj⟩
+  have hep : equivOI (p : ℤ_[p]) = pElt p := rfl
+  have hpElt_mem : pElt p ∈ IsLocalRing.maximalIdeal (𝒪 ℚ_[p]) := by
+    rw [IsLocalRing.mem_maximalIdeal, mem_nonunits_iff]
+    intro hu
+    have hunit_p : IsUnit (p : ℤ_[p]) := by
+      have hmap : IsUnit (equivOI.symm (pElt p)) := hu.map equivOI.symm.toMonoidHom
+      rwa [← hep, equivOI.symm_apply_apply] at hmap
+    exact (mem_nonunits_iff.mp ((IsLocalRing.mem_maximalIdeal _).mp hpmem)) hunit_p
+  refine le_antisymm ?_ ?_
+  · intro y hy
+    obtain ⟨b, rfl⟩ := hsurj y
+    have hb_mem : b ∈ IsLocalRing.maximalIdeal ℤ_[p] := by
+      rw [IsLocalRing.mem_maximalIdeal, mem_nonunits_iff]
+      intro hbu
+      have hunit_y : IsUnit (algebraMap ℤ_[p] (𝒪 ℚ_[p]) b) := hbu.map _
+      exact (mem_nonunits_iff.mp ((IsLocalRing.mem_maximalIdeal _).mp hy)) hunit_y
+    rw [PadicInt.maximalIdeal_eq_span_p, Ideal.mem_span_singleton] at hb_mem
+    obtain ⟨c, hc⟩ := hb_mem
+    rw [hc, map_mul]
+    exact Ideal.mul_mem_right _ _ (Ideal.mem_span_singleton_self (pElt p))
+  · rw [Ideal.span_le, Set.singleton_subset_iff]
+    exact hpElt_mem
 
-/-- **诚实 `sorry` (B) —— Eisenstein 根的整数提升。**
-`eisenstein e = X^e − C p` 的根 `π := AdjoinRoot.root` 满足 `π^e = p`（在 `L` 中）；
-因 `X^e − p` 在 `ℤ_p` 上首一，`π` 整，提升为 `θ ∈ 𝒪_L`，`θ^e = p`（像），且 `p` 在
-`𝒪_L` 中非单位故 `θ ∈ 𝔪_L`。把 `AdjoinRoot.root` 的方程从 `L` 落到整数环层面这套
-「Eisenstein ⟹ 全分歧」计算目前不在 Mathlib 中。 -/
-theorem Qpe_exists_integral_root :
-    ∃ θ : 𝒪 (Qpe (p := p) e),
+theorem Qpe_exists_integral_root : ∃ θ : 𝒪 (Qpe (p := p) e),
       θ ∈ IsLocalRing.maximalIdeal (𝒪 (Qpe (p := p) e)) ∧
-      θ ^ e = algebraMap (𝒪 ℚ_[p]) (𝒪 (Qpe (p := p) e)) (pElt p) :=
-  sorry
+      θ ^ e = algebraMap (𝒪 ℚ_[p]) (𝒪 (Qpe (p := p) e)) (pElt p) := by
+  let π : Qpe (p := p) e := AdjoinRoot.root (eisenstein (p := p) e)
+  have hπe : π ^ e = algebraMap ℚ_[p] (Qpe (p := p) e) (p : ℚ_[p]) := by
+    dsimp [π, Qpe, eisenstein]
+    change AdjoinRoot.root (X ^ e - C (p : ℚ_[p])) ^ e =
+      AdjoinRoot.of (X ^ e - C (p : ℚ_[p])) (p : ℚ_[p])
+    exact root_X_pow_sub_C_pow (K := ℚ_[p]) e (p : ℚ_[p])
+  have hπ_int : IsIntegral ℤ_[p] π := by
+    refine ⟨X ^ e - C (p : ℤ_[p]), ?_, ?_⟩
+    · exact monic_X_pow_sub_C _ (NeZero.ne e)
+    · rw [← Polynomial.aeval_def]
+      simp only [Polynomial.aeval_sub, Polynomial.aeval_X, map_pow, Polynomial.aeval_C]
+      rw [sub_eq_zero, hπe]
+      exact (IsScalarTower.algebraMap_apply ℤ_[p] ℚ_[p] (Qpe (p := p) e) (p : ℤ_[p])).symm
+  refine ⟨⟨π, hπ_int⟩, ?_, ?_⟩
+  · rw [IsLocalRing.mem_maximalIdeal, mem_nonunits_iff]
+    intro hu
+    have hue : IsUnit ((⟨π, hπ_int⟩ : 𝒪 (Qpe (p := p) e)) ^ e) := hu.pow e
+    have hval : (⟨π, hπ_int⟩ : 𝒪 (Qpe (p := p) e)) ^ e =
+        algebraMap (𝒪 ℚ_[p]) (𝒪 (Qpe (p := p) e)) (pElt p) := by
+      apply Subtype.ext
+      rw [Subalgebra.coe_pow, hπe]
+      simp
+    rw [hval] at hue
+    have hp_mem : pElt p ∈ IsLocalRing.maximalIdeal (𝒪 ℚ_[p]) := by
+      rw [Qpe_maximalIdeal_eq_span (p := p)]
+      exact Ideal.mem_span_singleton_self _
+    have hp_nonunit : ¬ IsUnit (pElt p) :=
+      mem_nonunits_iff.mp ((IsLocalRing.mem_maximalIdeal _).mp hp_mem)
+    exact hp_nonunit
+      (IsLocalHom.map_nonunit
+        (f := algebraMap (𝒪 ℚ_[p]) (𝒪 (Qpe (p := p) e))) (pElt p) hue)
+  · apply Subtype.ext
+    rw [Subalgebra.coe_pow, hπe]
+    simp
 
-/-- 几何核心 `𝔪_K·𝒪_L ⊆ 𝔪_L^e`，由组装引理喂入 (A)、(B) 得到（无 `sorry`）。 -/
 theorem Qpe_map_maximalIdeal_le_pow :
     (IsLocalRing.maximalIdeal (𝒪 ℚ_[p])).map
         (algebraMap (𝒪 ℚ_[p]) (𝒪 (Qpe (p := p) e)))
@@ -240,7 +289,6 @@ theorem Qpe_map_maximalIdeal_le_pow :
   rw [Qpe_maximalIdeal_eq_span (p := p), Ideal.map_span, Set.image_singleton, ← hθpow]
   exact span_pow_le_pow e hθmem
 
-/-- 全分歧下界 `e ≤ e(L/K)`，由通用引理 (1) 喂入几何核心得到（无 `sorry`）。 -/
 theorem Qpe_le_ramificationIdx :
     e ≤ ramificationIdx ℚ_[p] (Qpe (p := p) e) := by
   have hinj : Function.Injective (algebraMap (𝒪 ℚ_[p]) (𝒪 (Qpe (p := p) e))) :=
@@ -254,8 +302,6 @@ theorem Qpe_le_ramificationIdx :
   exact le_ramificationIdx_of_map_le_pow
     (IsLocalRing.maximalIdeal (𝒪 ℚ_[p])) hne (Qpe_map_maximalIdeal_le_pow (p := p) e)
 
-/-- Totally ramified: `f = 1`。由全分歧下界 `e ≤ e(L/K)`、基本恒等式 `e(L/K)·f = e`、
-以及 `f ≥ 1` 三者挤出（无 `sorry`）。 -/
 theorem Qpe_inertiaDeg : inertiaDeg ℚ_[p] (Qpe (p := p) e) = 1 := by
   have hef : ramificationIdx ℚ_[p] (Qpe (p := p) e)
         * inertiaDeg ℚ_[p] (Qpe (p := p) e) = e := by

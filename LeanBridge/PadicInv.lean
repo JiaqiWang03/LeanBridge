@@ -711,7 +711,7 @@ private theorem map_maximalIdeal_eq_pow_ramificationIdx :
     exact (hstrict (Nat.lt_succ_self k)).2
   rw [hram]; exact hk
 
-set_option maxHeartbeats 1000000 in
+set_option maxHeartbeats 500000 in
 open scoped nonZeroDivisors in
 open IsLocalRing in
 /-- Dedekind's different theorem (blueprint `thm:dedekind-different`): the different
@@ -730,25 +730,13 @@ theorem differentExponent_tame :
     ramificationIdx K L - 1 ≤ differentExponent K L ∧
       (differentExponent K L = ramificationIdx K L - 1 ↔ IsTamelyRamified K L) := by
   haveI : CharZero K := charZero_of_padicAlgebra p K
-  haveI : Algebra.IsSeparable (FractionRing (𝒪 K)) (FractionRing (𝒪 L)) :=
-    separable_fractionRing K L
   haveI hnzp : NeZero p := ⟨(Fact.out (p := p.Prime)).ne_zero⟩
-  have hmK : maximalIdeal (𝒪 K) ≠ ⊥ := IsDiscreteValuationRing.not_a_field (𝒪 K)
   have hP0 : maximalIdeal (𝒪 L) ≠ ⊥ := IsDiscreteValuationRing.not_a_field (𝒪 L)
   have hd : differentIdeal (𝒪 K) (𝒪 L) ≠ ⊥ := differentIdeal_ne_bot
   have hfin : FiniteMultiplicity (maximalIdeal (𝒪 L)) (differentIdeal (𝒪 K) (𝒪 L)) :=
     FiniteMultiplicity.of_not_isUnit
       (Ideal.isUnit_iff.not.mpr (IsLocalRing.maximalIdeal.isMaximal (𝒪 L)).ne_top)
       (by rw [Ideal.zero_eq_bot]; exact hd)
-  have hge : ramificationIdx K L - 1 ≤ differentExponent K L := by
-    have hdvd : (maximalIdeal (𝒪 L)) ^ (ramificationIdx K L) ∣
-        (maximalIdeal (𝒪 K)).map (algebraMap (𝒪 K) (𝒪 L)) :=
-      Ideal.dvd_iff_le.mpr Ideal.le_pow_ramificationIdx
-    have hdvd' : (maximalIdeal (𝒪 L)) ^ (ramificationIdx K L - 1) ∣
-        differentIdeal (𝒪 K) (𝒪 L) :=
-      pow_sub_one_dvd_differentIdeal (P := maximalIdeal (𝒪 L)) (e := ramificationIdx K L)
-        (hp := hmK) (hP := hdvd)
-    exact hfin.le_multiplicity_of_pow_dvd hdvd'
   have hPe := map_maximalIdeal_eq_pow_ramificationIdx K L
   have hle : (maximalIdeal (𝒪 K)).map (algebraMap (𝒪 K) (𝒪 L)) ≤ maximalIdeal (𝒪 L) := by
     rw [Ideal.map_le_iff_le_comap]
@@ -769,13 +757,6 @@ theorem differentExponent_tame :
     haveI : Finite (IsLocalRing.ResidueField ℤ_[p]) :=
       Finite.of_equiv _ (PadicInt.residueField (p := p)).symm.toEquiv
     exact IsLocalRing.ResidueField.finite_of_finite (R := ℤ_[p]) (S := 𝒪 L) inferInstance
-  haveI : IsDedekindDomain (𝒪 K) := inferInstance
-  haveI : IsDedekindDomain (𝒪 L) := inferInstance
-  haveI : Module.Finite (𝒪 K) (𝒪 L) := inferInstance
-  haveI : Module.IsTorsionFree (𝒪 K) (𝒪 L) := inferInstance
-  haveI : IsIntegrallyClosed (𝒪 L) := inferInstance
-  haveI hmaxK : (maximalIdeal (𝒪 K)).IsMaximal := IsLocalRing.maximalIdeal.isMaximal (𝒪 K)
-  haveI hmaxL : (maximalIdeal (𝒪 L)).IsMaximal := IsLocalRing.maximalIdeal.isMaximal (𝒪 L)
   letI : Field (𝒪 K ⧸ maximalIdeal (𝒪 K)) := Ideal.Quotient.field _
   letI : Field (𝒪 L ⧸ maximalIdeal (𝒪 L)) := Ideal.Quotient.field _
   haveI : Finite (𝒪 K ⧸ maximalIdeal (𝒪 K)) := hfinK
@@ -803,7 +784,9 @@ theorem differentExponent_tame :
     exact ((IsLocalRing.mem_maximalIdeal _).mp hmem) hunit
   have hcore := fun x => DedekindTame.intTrace_residue_scaling
     (p := maximalIdeal (𝒪 K)) (P := maximalIdeal (𝒪 L)) x hP0 hPe
-  refine ⟨hge, ?_, ?_⟩
+  refine ⟨hfin.le_multiplicity_of_pow_dvd (pow_sub_one_dvd_differentIdeal (P := maximalIdeal (𝒪 L)) (e := ramificationIdx K L)
+        (hp := IsDiscreteValuationRing.not_a_field (𝒪 K))
+        (hP := Ideal.dvd_iff_le.mpr Ideal.le_pow_ramificationIdx)), ?_, ?_⟩
   · intro hδ
     by_contra htame'
     rw [IsTamelyRamified, not_not] at htame'
@@ -819,8 +802,6 @@ theorem differentExponent_tame :
       (map_ne_zero_iff _ (IsFractionRing.injective (𝒪 K) K)).mpr hϖ.ne_zero
     have hIne : (↑(maximalIdeal (𝒪 L) ^ ramificationIdx K L) : FractionalIdeal (𝒪 L)⁰ L) ≠ 0 :=
       FractionalIdeal.coeIdeal_ne_zero.mpr (pow_ne_zero _ hP0)
-    haveI : Algebra.IsAlgebraic K L := Algebra.IsAlgebraic.of_finite K L
-    haveI : Algebra.IsSeparable K L := Algebra.IsAlgebraic.isSeparable_of_perfectField
     have hle_id : differentIdeal (𝒪 K) (𝒪 L) ≤ maximalIdeal (𝒪 L) ^ ramificationIdx K L := by
       rw [← FractionalIdeal.coeIdeal_le_coeIdeal L,
         differentialIdeal_le_fractionalIdeal_iff (K := K) (L := L) hIne,
@@ -879,9 +860,11 @@ theorem differentExponent_tame :
         (hP := hPmul) (x := x) (hxQ := Submodule.mem_top) (hx := hnotmem)
     have hlt : differentExponent K L < ramificationIdx K L := by
       by_contra hle2
-      push_neg at hle2
+      push Not at hle2
       exact hndvd (hfin.pow_dvd_iff_le_multiplicity.mpr hle2)
-    exact le_antisymm (Nat.le_pred_of_lt hlt) hge
+    exact le_antisymm (Nat.le_pred_of_lt hlt) (hfin.le_multiplicity_of_pow_dvd (pow_sub_one_dvd_differentIdeal (P := maximalIdeal (𝒪 L)) (e := ramificationIdx K L)
+        (hp := IsDiscreteValuationRing.not_a_field (𝒪 K))
+        (hP := Ideal.dvd_iff_le.mpr Ideal.le_pow_ramificationIdx)))
 
 /-- The discriminant exponent vanishes exactly when `L / K` is unramified
 (blueprint `thm:disc-zero-iff-unramified`): `d = 0 ↔ e = 1`. -/
