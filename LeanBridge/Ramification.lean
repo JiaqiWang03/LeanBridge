@@ -17,8 +17,8 @@ variable (K : Type*) [Field K] {p : ℕ} [Fact p.Prime] [Algebra ℚ_[p] K] [Pad
 /-- The *base ramification index* `e₀ = e(K / ℚ_p)`: the
 ramification index of the maximal ideal `(p) = 𝔪_{ℤ_[p]}` in `𝒪_K`. -/
 def baseRamificationIndex : ℕ :=
-  Ideal.ramificationIdx (R := ℤ_[p]) (S := 𝒪[K])
-    (IsLocalRing.maximalIdeal ℤ_[p]) (IsLocalRing.maximalIdeal (𝒪[K]))
+  Ideal.ramificationIdx (R := ℤ_[p]) (S := 𝓞 K)
+    (IsLocalRing.maximalIdeal ℤ_[p]) (IsLocalRing.maximalIdeal (𝓞 K))
 
 /-!
 ## Invariants of an extension `L / K`
@@ -33,15 +33,15 @@ variable (L : Type*) [Field L] [Algebra ℚ_[p] L] [PadicField L p]
 the ramification index of the maximal ideal `𝔪_K` of `𝒪_K` in `𝒪_L`.
 Equivalently `v_L(π_K) = e`, `𝔪_K 𝒪_L = 𝔪_L ^ e`. -/
 def ramificationIdx : ℕ :=
-  Ideal.ramificationIdx (R := 𝒪[K]) (S := 𝒪[L])
-    (IsLocalRing.maximalIdeal (𝒪[K]))
-    (IsLocalRing.maximalIdeal (𝒪[L]))
+  Ideal.ramificationIdx (R := 𝓞 K) (S := 𝓞 L)
+    (IsLocalRing.maximalIdeal (𝓞 K))
+    (IsLocalRing.maximalIdeal (𝓞 L))
 
 /-- The *absolute ramification index* `e_abs = e(L / ℚ_p)`:
 the ramification index of the maximal ideal `(p) = 𝔪_{ℤ_[p]}` in `𝒪_L`. -/
 def absoluteRamificationIndex : ℕ :=
-  Ideal.ramificationIdx (R := ℤ_[p]) (S := 𝒪[L])
-    (IsLocalRing.maximalIdeal ℤ_[p]) (IsLocalRing.maximalIdeal (𝒪[L]))
+  Ideal.ramificationIdx (R := ℤ_[p]) (S := 𝓞 L)
+    (IsLocalRing.maximalIdeal ℤ_[p]) (IsLocalRing.maximalIdeal (𝓞 L))
 
 /-- `L / K` is *unramified* when `e = 1`. -/
 def IsUnramified : Prop := ramificationIdx K L = 1
@@ -71,12 +71,12 @@ def tameRamificationIndex : ℕ :=
 
 -- Shared structural instances for `L / K`, used by both results below.
 
-instance : Algebra.IsIntegral ℤ_[p] (𝒪[K]) :=
-  inferInstanceAs (Algebra.IsIntegral ℤ_[p] (integralClosure ℤ_[p] K))
+-- instance : Algebra.IsIntegral ℤ_[p] (𝓞 K) :=
+--   inferInstanceAs (Algebra.IsIntegral ℤ_[p] (integralClosure ℤ_[p] K))
 
 /-- `𝒪_L` is the integral closure of `𝒪_K` in `L`: an element of `L` is integral
 over `𝒪_K` iff it is integral over `ℤ_[p]`. -/
-instance : IsIntegralClosure (𝒪[L]) (𝒪[K]) L := by
+instance : IsIntegralClosure (𝓞 L) (𝓞 K) L := by
   constructor
   · exact Subtype.coe_injective
   · intro x
@@ -98,97 +98,97 @@ instance instIsAlgebraicFieldExtension : Algebra.IsAlgebraic K L :=
 
 /-- `K` has characteristic zero (it contains `ℚ_[p]`), hence `L / K` is separable.
 Phrased over `𝒪_K` so that `p` is fixed by the statement. -/
-instance : Module.Finite (𝒪[K]) (𝒪[L]) := by
-  letI : IsFractionRing 𝒪[K] K := RingOfIntegers.instIsFractionRing (K := K)
-  letI : IsFractionRing 𝒪[L] L := RingOfIntegers.instIsFractionRing (K := L)
+instance : Module.Finite (𝓞 K) (𝓞 L) := by
+  letI : IsFractionRing (𝓞 K) K := RingOfIntegers.instIsFractionRing (K := K)
+  letI : IsFractionRing (𝓞 L) L := RingOfIntegers.instIsFractionRing (K := L)
   haveI : Algebra.IsSeparable K L := isSeparable_of_padicExtension p K L
-  exact IsIntegralClosure.finite (𝒪[K]) K L (𝒪[L])
+  exact IsIntegralClosure.finite (𝓞 K) K L (𝓞 L)
 
-instance : FaithfulSMul (𝒪[K]) (𝒪[L]) :=
-  (faithfulSMul_iff_algebraMap_injective (𝒪[K]) (𝒪[L])).2
+instance : FaithfulSMul (𝓞 K) (𝓞 L) :=
+  (faithfulSMul_iff_algebraMap_injective (𝓞 K) (𝓞 L)).2
     fun _ _ hab => Subtype.ext ((algebraMap K L).injective (Subtype.ext_iff.1 hab))
 
-instance : Module.IsTorsionFree (𝒪[K]) L :=
-  .trans_faithfulSMul (𝒪[K]) (𝒪[L]) L
+instance : Module.IsTorsionFree (𝓞 K) L :=
+  .trans_faithfulSMul (𝓞 K) (𝓞 L) L
 
-instance instAlgebraIsIntegralRingOfIntegersExtension : Algebra.IsIntegral (𝒪[K]) (𝒪[L]) :=
+instance instAlgebraIsIntegralRingOfIntegersExtension : Algebra.IsIntegral (𝓞 K) (𝓞 L) :=
   Algebra.IsIntegral.of_finite _ _
 
-instance instIsTorsionFreeRingOfIntegersExtension : Module.IsTorsionFree (𝒪[K]) (𝒪[L]) :=
+instance instIsTorsionFreeRingOfIntegersExtension : Module.IsTorsionFree (𝓞 K) (𝓞 L) :=
   Module.isTorsionFree_iff_algebraMap_injective.mpr
-    (FaithfulSMul.algebraMap_injective (𝒪[K]) (𝒪[L]))
+    (FaithfulSMul.algebraMap_injective (𝓞 K) (𝓞 L))
 
-instance instIsLocalHomRingOfIntegersMap : IsLocalHom (algebraMap (𝒪[K]) (𝒪[L])) := by
-  have hcomap : Ideal.comap (algebraMap (𝒪[K]) (𝒪[L]))
-      (IsLocalRing.maximalIdeal (𝒪[L])) = IsLocalRing.maximalIdeal (𝒪[K]) :=
+instance instIsLocalHomRingOfIntegersMap : IsLocalHom (algebraMap (𝓞 K) (𝓞 L)) := by
+  have hcomap : Ideal.comap (algebraMap (𝓞 K) (𝓞 L))
+      (IsLocalRing.maximalIdeal (𝓞 L)) = IsLocalRing.maximalIdeal (𝓞 K) :=
     Ideal.LiesOver.over.symm
-  exact ((IsLocalRing.local_hom_TFAE (algebraMap (𝒪[K]) (𝒪[L]))).out 4 0).mp hcomap
+  exact ((IsLocalRing.local_hom_TFAE (algebraMap (𝓞 K) (𝓞 L))).out 4 0).mp hcomap
 
 instance instModuleFiniteResidueFieldRingOfIntegersExtension :
-    Module.Finite (IsLocalRing.ResidueField (𝒪[K])) (IsLocalRing.ResidueField (𝒪[L])) :=
+    Module.Finite (IsLocalRing.ResidueField (𝓞 K)) (IsLocalRing.ResidueField (𝓞 L)) :=
   IsLocalRing.ResidueField.finite_of_module_finite
 
 instance instIsAlgebraicResidueFieldRingOfIntegersExtension :
-    Algebra.IsAlgebraic (IsLocalRing.ResidueField (𝒪[K])) (IsLocalRing.ResidueField (𝒪[L])) :=
+    Algebra.IsAlgebraic (IsLocalRing.ResidueField (𝓞 K)) (IsLocalRing.ResidueField (𝓞 L)) :=
   Algebra.IsAlgebraic.of_finite _ _
 
 instance instIsSeparableResidueFieldRingOfIntegersExtension :
-    Algebra.IsSeparable (IsLocalRing.ResidueField (𝒪[K])) (IsLocalRing.ResidueField (𝒪[L])) :=
-  haveI : PerfectField (IsLocalRing.ResidueField (𝒪[K])) := inferInstance
+    Algebra.IsSeparable (IsLocalRing.ResidueField (𝓞 K)) (IsLocalRing.ResidueField (𝓞 L)) :=
+  haveI : PerfectField (IsLocalRing.ResidueField (𝓞 K)) := inferInstance
   Algebra.IsAlgebraic.isSeparable_of_perfectField
 
 /-- Transitivity of ramification: the absolute
 ramification index is the product of the relative and base ones, `e_abs = e · e₀`. -/
 theorem absoluteRamificationIndex_eq :
     absoluteRamificationIndex L = ramificationIdx K L * baseRamificationIndex K := by
-  have hinjKL : Function.Injective (algebraMap (𝒪[K]) (𝒪[L])) :=
-    FaithfulSMul.algebraMap_injective (𝒪[K]) (𝒪[L])
-  have hinjZL : Function.Injective (algebraMap ℤ_[p] (𝒪[L])) := by
-    rw [IsScalarTower.algebraMap_eq ℤ_[p] (𝒪[K]) (𝒪[L]), RingHom.coe_comp]
-    exact hinjKL.comp (FaithfulSMul.algebraMap_injective ℤ_[p] (𝒪[K]))
-  have hmK : IsLocalRing.maximalIdeal (𝒪[K]) ≠ ⊥ := IsDiscreteValuationRing.not_a_field (𝒪[K])
+  have hinjKL : Function.Injective (algebraMap (𝓞 K) (𝓞 L)) :=
+    FaithfulSMul.algebraMap_injective (𝓞 K) (𝓞 L)
+  have hinjZL : Function.Injective (algebraMap ℤ_[p] (𝓞 L)) := by
+    rw [IsScalarTower.algebraMap_eq ℤ_[p] (𝓞 K) (𝓞 L), RingHom.coe_comp]
+    exact hinjKL.comp (FaithfulSMul.algebraMap_injective ℤ_[p] (𝓞 K))
+  have hmK : IsLocalRing.maximalIdeal (𝓞 K) ≠ ⊥ := IsDiscreteValuationRing.not_a_field (𝓞 K)
   have hmZ : IsLocalRing.maximalIdeal ℤ_[p] ≠ ⊥ := IsDiscreteValuationRing.not_a_field ℤ_[p]
-  have hg0 : Ideal.map (algebraMap (𝒪[K]) (𝒪[L])) (IsLocalRing.maximalIdeal (𝒪[K])) ≠ ⊥ :=
+  have hg0 : Ideal.map (algebraMap (𝓞 K) (𝓞 L)) (IsLocalRing.maximalIdeal (𝓞 K)) ≠ ⊥ :=
     (Ideal.map_eq_bot_iff_of_injective hinjKL).not.mpr hmK
-  have hfg : Ideal.map (algebraMap ℤ_[p] (𝒪[L])) (IsLocalRing.maximalIdeal ℤ_[p]) ≠ ⊥ :=
+  have hfg : Ideal.map (algebraMap ℤ_[p] (𝓞 L)) (IsLocalRing.maximalIdeal ℤ_[p]) ≠ ⊥ :=
     (Ideal.map_eq_bot_iff_of_injective hinjZL).not.mpr hmZ
-  have hg : Ideal.map (algebraMap (𝒪[K]) (𝒪[L])) (IsLocalRing.maximalIdeal (𝒪[K])) ≤
-      IsLocalRing.maximalIdeal (𝒪[L]) :=
+  have hg : Ideal.map (algebraMap (𝓞 K) (𝓞 L)) (IsLocalRing.maximalIdeal (𝓞 K)) ≤
+      IsLocalRing.maximalIdeal (𝓞 L) :=
     Ideal.map_le_iff_le_comap.mpr (le_of_eq Ideal.LiesOver.over)
   rw [absoluteRamificationIndex, baseRamificationIndex, ramificationIdx,
     Ideal.ramificationIdx_algebra_tower hg0 hfg hg, mul_comm]
 
-/-- `𝒪[L]` is a finite free `𝒪[K]`-module of rank `[L : K]`. -/
+/-- `𝓞 L` is a finite free `𝓞 K`-module of rank `[L : K]`. -/
 theorem free_finrank :
-    Module.Free (𝒪[K]) (𝒪[L]) ∧
-      Module.finrank (𝒪[K]) (𝒪[L]) = Module.finrank K L := by
-  letI : IsFractionRing 𝒪[K] K := RingOfIntegers.instIsFractionRing (K := K)
+    Module.Free (𝓞 K) (𝓞 L) ∧
+      Module.finrank (𝓞 K) (𝓞 L) = Module.finrank K L := by
+  letI : IsFractionRing (𝓞 K) K := RingOfIntegers.instIsFractionRing (K := K)
   haveI : Algebra.IsSeparable K L := isSeparable_of_padicExtension p K L
-  exact ⟨IsIntegralClosure.module_free (𝒪[K]) K L (𝒪[L]),
-         IsIntegralClosure.rank (𝒪[K]) K L (𝒪[L])⟩
+  exact ⟨IsIntegralClosure.module_free (𝓞 K) K L (𝓞 L),
+         IsIntegralClosure.rank (𝓞 K) K L (𝓞 L)⟩
 
 /-- The *residue degree* `f(L / K)` of an extension of `p`-adic fields :
   `f = [k_L : k_K]`, realised as the inertia degree of `𝔪_K` in `𝒪_L`. -/
 def inertiaDeg : ℕ :=
-  Ideal.inertiaDeg (R := 𝒪[K]) (S := 𝒪[L])
-    (IsLocalRing.maximalIdeal (𝒪[K]))
-    (IsLocalRing.maximalIdeal (𝒪[L]))
+  Ideal.inertiaDeg (R := 𝓞 K) (S := 𝓞 L)
+    (IsLocalRing.maximalIdeal (𝓞 K))
+    (IsLocalRing.maximalIdeal (𝓞 L))
 
 /-- The fundamental identity `e * f = [L : K]` -/
 theorem ramificationIdx_mul_inertiaDeg :
     ramificationIdx K L * inertiaDeg K L = Module.finrank K L := by
-  letI : IsFractionRing 𝒪[K] K := RingOfIntegers.instIsFractionRing (K := K)
-  letI : IsFractionRing 𝒪[L] L := RingOfIntegers.instIsFractionRing (K := L)
-  have hp0 : IsLocalRing.maximalIdeal (𝒪[K]) ≠ ⊥ := fun h =>
-    IsDiscreteValuationRing.not_isField (𝒪[K])
+  letI : IsFractionRing (𝓞 K) K := RingOfIntegers.instIsFractionRing (K := K)
+  letI : IsFractionRing (𝓞 L) L := RingOfIntegers.instIsFractionRing (K := L)
+  have hp0 : IsLocalRing.maximalIdeal (𝓞 K) ≠ ⊥ := fun h =>
+    IsDiscreteValuationRing.not_isField (𝓞 K)
       ((IsLocalRing.isField_iff_maximalIdeal_eq).2 h)
   simpa only [ramificationIdx, inertiaDeg] using
     Ideal.ramificationIdx_mul_inertiaDeg_of_isLocalRing
-      (R := 𝒪[K]) (S := 𝒪[L]) (K := K) (L := L) hp0
+      (R := 𝓞 K) (S := 𝓞 L) (K := K) (L := L) hp0
 
 /-- `𝒪_L` is a free `𝒪_K`-module, so it carries a chosen
 basis used to define the discriminant. -/
-instance instModuleFree : Module.Free (𝒪[K]) (𝒪[L]) := (free_finrank K L).1
+instance instModuleFree : Module.Free (𝓞 K) (𝓞 L) := (free_finrank K L).1
 
 
 
@@ -217,21 +217,21 @@ open IsLocalRing in
 /-- In this local (DVR) setting, the extension of the maximal ideal factors as a single
 prime power: `𝔪_K 𝒪_L = 𝔪_L ^ e`. -/
 lemma map_maximalIdeal_eq_pow_ramificationIdx :
-    (maximalIdeal (𝒪[K])).map (algebraMap (𝒪[K]) (𝒪[L]))
-      = (maximalIdeal (𝒪[L])) ^ (ramificationIdx K L) := by
-  have hP0 : maximalIdeal (𝒪[L]) ≠ ⊥ := IsDiscreteValuationRing.not_a_field (𝒪[L])
-  have hmK : maximalIdeal (𝒪[K]) ≠ ⊥ := IsDiscreteValuationRing.not_a_field (𝒪[K])
-  have hmapne : (maximalIdeal (𝒪[K])).map (algebraMap (𝒪[K]) (𝒪[L])) ≠ ⊥ :=
+    (maximalIdeal (𝓞 K)).map (algebraMap (𝓞 K) (𝓞 L))
+      = (maximalIdeal (𝓞 L)) ^ (ramificationIdx K L) := by
+  have hP0 : maximalIdeal (𝓞 L) ≠ ⊥ := IsDiscreteValuationRing.not_a_field (𝓞 L)
+  have hmK : maximalIdeal (𝓞 K) ≠ ⊥ := IsDiscreteValuationRing.not_a_field (𝓞 K)
+  have hmapne : (maximalIdeal (𝓞 K)).map (algebraMap (𝓞 K) (𝓞 L)) ≠ ⊥ :=
     Ideal.map_ne_bot_of_ne_bot hmK
   have hk := eq_maximalIdeal_pow_multiplicity hmapne
-  set k := multiplicity (maximalIdeal (𝒪[L]))
-    ((maximalIdeal (𝒪[K])).map (algebraMap (𝒪[K]) (𝒪[L]))) with hk_def
-  have hstrict : StrictAnti (fun n : ℕ => (maximalIdeal (𝒪[L])) ^ n) :=
-    Ideal.pow_right_strictAnti (maximalIdeal (𝒪[L])) hP0
-      (IsLocalRing.maximalIdeal.isMaximal (𝒪[L])).ne_top
+  set k := multiplicity (maximalIdeal (𝓞 L))
+    ((maximalIdeal (𝓞 K)).map (algebraMap (𝓞 K) (𝓞 L))) with hk_def
+  have hstrict : StrictAnti (fun n : ℕ => (maximalIdeal (𝓞 L)) ^ n) :=
+    Ideal.pow_right_strictAnti (maximalIdeal (𝓞 L)) hP0
+      (IsLocalRing.maximalIdeal.isMaximal (𝓞 L)).ne_top
   have hram : ramificationIdx K L = k := by
-    show Ideal.ramificationIdx (R := 𝒪[K]) (S := 𝒪[L])
-      (maximalIdeal (𝒪[K])) (maximalIdeal (𝒪[L])) = k
+    show Ideal.ramificationIdx (R := 𝓞 K) (S := 𝓞 L)
+      (maximalIdeal (𝓞 K)) (maximalIdeal (𝓞 L)) = k
     refine Ideal.ramificationIdx_spec (le_of_eq hk) ?_
     rw [hk]
     exact (hstrict (Nat.lt_succ_self k)).2
@@ -243,11 +243,11 @@ lemma ramificationIdx_ne_zero : NeZero (ramificationIdx K L) := by
   refine ⟨fun h => ?_⟩
   have hPe := map_maximalIdeal_eq_pow_ramificationIdx K L
   rw [h, pow_zero, Ideal.one_eq_top] at hPe
-  have hle : (maximalIdeal (𝒪[K])).map (algebraMap (𝒪[K]) (𝒪[L])) ≤ maximalIdeal (𝒪[L]) := by
+  have hle : (maximalIdeal (𝓞 K)).map (algebraMap (𝓞 K) (𝓞 L)) ≤ maximalIdeal (𝓞 L) := by
     rw [Ideal.map_le_iff_le_comap]
-    exact le_of_eq (Ideal.LiesOver.over (p := maximalIdeal (𝒪[K])) (P := maximalIdeal (𝒪[L])))
+    exact le_of_eq (Ideal.LiesOver.over (p := maximalIdeal (𝓞 K)) (P := maximalIdeal (𝓞 L)))
   rw [hPe] at hle
-  exact (IsLocalRing.maximalIdeal.isMaximal (𝒪[L])).ne_top (top_le_iff.mp hle)
+  exact (IsLocalRing.maximalIdeal.isMaximal (𝓞 L)).ne_top (top_le_iff.mp hle)
 
 end Extension
 

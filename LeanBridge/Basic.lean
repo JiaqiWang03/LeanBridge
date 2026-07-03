@@ -17,7 +17,7 @@ noncomputable section
 
 /-- A *`p`-adic field* is a finite extension `K / ℚ_[p]`. The prime `p` is an
 `outParam`: it is recovered from the field `K` (via its `ℚ_[p]`-algebra
-structure), so downstream definitions such as `𝒪[K]` need not carry `p`. -/
+structure), so downstream definitions such as `𝓞 K` need not carry `p`. -/
 class PadicField (K : Type*) [Field K] (p : outParam ℕ) [Fact p.Prime] [Algebra ℚ_[p] K] : Prop
     extends Module.Finite ℚ_[p] K
 
@@ -52,105 +52,106 @@ instance : Algebra.IsSeparable ℚ_[p] K := by
 instance : Module.IsTorsionFree ℤ_[p] K :=
   Module.isTorsionFree_iff_algebraMap_injective.mpr (algebraMap_padicInt_injective p K)
 
-/-- The ring of integers `𝒪[K]` of a `p`-adic field `K`: the integral closure of
+/-- The ring of integers `𝓞 K` of a `p`-adic field `K`: the integral closure of
 `ℤ_[p]` (the integers of `ℚ_[p]`) in `K`. The prime `p` is recovered from the
 `PadicField` instance, so it is not an explicit argument. -/
 def ringOfIntegers (K : Type*) [Field K] {p : ℕ} [Fact p.Prime] [Algebra ℚ_[p] K]
     [PadicField K p] : Type _ := integralClosure ℤ_[p] K
 deriving CommRing, IsDomain, Nontrivial
 
-@[inherit_doc] scoped[PadicField] notation "𝒪[" K "]" => PadicField.ringOfIntegers K
+@[inherit_doc] scoped[PadicField] notation "𝓞" => PadicField.ringOfIntegers
 
 open scoped PadicField
 
 namespace RingOfIntegers
 
-instance instAlgebraPadicInt : Algebra ℤ_[p] 𝒪[K] :=
+instance instAlgebraPadicInt : Algebra ℤ_[p] (𝓞 K) :=
   inferInstanceAs (Algebra ℤ_[p] (integralClosure ℤ_[p] K))
 
-instance instModulePadicInt : Module ℤ_[p] 𝒪[K] :=
+instance instModulePadicInt : Module ℤ_[p] (𝓞 K ):=
   inferInstanceAs (Module ℤ_[p] (integralClosure ℤ_[p] K))
 
-instance instAlgebraField : Algebra 𝒪[K] K :=
+instance instAlgebraField : Algebra (𝓞 K) K :=
   inferInstanceAs (Algebra (integralClosure ℤ_[p] K) K)
 
-/-- The canonical coercion from `𝒪[K]` to `K`. -/
+/-- The canonical coercion from `𝓞 K` to `K`. -/
 @[coe]
-abbrev val (x : 𝒪[K]) : K := algebraMap _ _ x
+abbrev val (x : 𝓞 K) : K := algebraMap _ _ x
 
-instance instCoeHeadField : CoeHead 𝒪[K] K := ⟨fun x => algebraMap 𝒪[K] K x⟩
+instance instCoeHeadField : CoeHead (𝓞 K) K := ⟨fun x => algebraMap (𝓞 K) K x⟩
 
 @[simp]
 lemma algebraMap_field_mk (x : K) (hx) :
-    algebraMap 𝒪[K] K ⟨x, hx⟩ = x := rfl
+    algebraMap (𝓞 K) K ⟨x, hx⟩ = x := rfl
 
 omit [PadicField K p] in
 @[simp]
-lemma coe_mk (x : K) (hx) : ((⟨x, hx⟩ : 𝒪[K]) : K) = x := rfl
+lemma coe_mk (x : K) (hx) : ((⟨x, hx⟩ : 𝓞 K) : K) = x := rfl
 
 @[ext]
-theorem ext {x y : 𝒪[K]} (h : (x : K) = (y : K)) : x = y :=
+theorem ext {x y : 𝓞 K} (h : (x : K) = (y : K)) : x = y :=
   Subtype.ext h
 
 @[simp, norm_cast]
-theorem coe_eq_coe {x y : 𝒪[K]} : (x : K) = (y : K) ↔ x = y :=
+theorem coe_eq_coe {x y : 𝓞 K} : (x : K) = (y : K) ↔ x = y :=
   Subtype.ext_iff.symm
 
-instance instIsScalarTowerField : IsScalarTower ℤ_[p] 𝒪[K] K :=
+instance instIsScalarTowerField : IsScalarTower ℤ_[p] (𝓞 K) K :=
   IsScalarTower.of_algebraMap_eq fun _ => rfl
 
-instance instFaithfulSMulPadicInt : FaithfulSMul ℤ_[p] 𝒪[K] := by
-  exact (faithfulSMul_iff_algebraMap_injective ℤ_[p] 𝒪[K]).mpr fun x y hxy => by
+instance instFaithfulSMulPadicInt : FaithfulSMul ℤ_[p] (𝓞 K) := by
+  exact (faithfulSMul_iff_algebraMap_injective ℤ_[p] (𝓞 K)).mpr fun x y hxy => by
     apply algebraMap_padicInt_injective p K
     calc
-      algebraMap ℤ_[p] K x = algebraMap 𝒪[K] K (algebraMap ℤ_[p] 𝒪[K] x) := by
-        rw [IsScalarTower.algebraMap_apply ℤ_[p] 𝒪[K] K]
-      _ = algebraMap 𝒪[K] K (algebraMap ℤ_[p] 𝒪[K] y) := by rw [hxy]
+      algebraMap ℤ_[p] K x = algebraMap (𝓞 K) K (algebraMap ℤ_[p] (𝓞 K) x) := by
+        rw [IsScalarTower.algebraMap_apply ℤ_[p] (𝓞 K) K]
+      _ = algebraMap (𝓞 K) K (algebraMap ℤ_[p] (𝓞 K) y) := by rw [hxy]
       _ = algebraMap ℤ_[p] K y := by
-        rw [IsScalarTower.algebraMap_apply ℤ_[p] 𝒪[K] K]
+        rw [IsScalarTower.algebraMap_apply ℤ_[p] (𝓞 K) K]
 
-instance instIsIntegralClosure : IsIntegralClosure 𝒪[K] ℤ_[p] K :=
+instance instIsIntegralClosure : IsIntegralClosure (𝓞 K) ℤ_[p] K :=
   integralClosure.isIntegralClosure ℤ_[p] K
 
-instance instIsFractionRing : IsFractionRing 𝒪[K] K :=
+instance instIsFractionRing : IsFractionRing (𝓞 K) K :=
   integralClosure.isFractionRing_of_finite_extension ℚ_[p] K
 
-instance instIsIntegralPadicInt: Algebra.IsIntegral ℤ_[p] 𝒪[K] :=
+
+instance instIsIntegralPadicInt: Algebra.IsIntegral ℤ_[p] (𝓞 K) :=
   inferInstanceAs (Algebra.IsIntegral ℤ_[p] (integralClosure ℤ_[p] K))
 
-instance instCharZero: CharZero 𝒪[K] :=
-  charZero_of_injective_algebraMap (FaithfulSMul.algebraMap_injective ℤ_[p] 𝒪[K])
+instance instCharZero: CharZero (𝓞 K) :=
+  charZero_of_injective_algebraMap (FaithfulSMul.algebraMap_injective ℤ_[p] (𝓞 K))
 
-instance instPerfectFieldFractionRing: PerfectField (FractionRing 𝒪[K]) :=
+instance instPerfectFieldFractionRing: PerfectField (FractionRing (𝓞 K)) :=
   inferInstance
 
-instance instFiniteRingOfIntegers : Module.Finite ℤ_[p] 𝒪[K] :=
-  IsIntegralClosure.finite ℤ_[p] ℚ_[p] K 𝒪[K]
+instance instFiniteRingOfIntegers : Module.Finite ℤ_[p] (𝓞 K) :=
+  IsIntegralClosure.finite ℤ_[p] ℚ_[p] K (𝓞 K)
 
-instance instFreeRingOfIntegers : Module.Free ℤ_[p] 𝒪[K] :=
-  IsIntegralClosure.module_free ℤ_[p] ℚ_[p] K 𝒪[K]
+instance instFreeRingOfIntegers : Module.Free ℤ_[p] (𝓞 K) :=
+  IsIntegralClosure.module_free ℤ_[p] ℚ_[p] K (𝓞 K)
 
-instance instAlgebraFieldExtension {L : Type*} [Ring L] [Algebra K L] : Algebra 𝒪[K] L :=
+instance instAlgebraFieldExtension {L : Type*} [Ring L] [Algebra K L] : Algebra (𝓞 K) L :=
   inferInstanceAs (Algebra (integralClosure ℤ_[p] K) L)
 
 instance instIsScalarTowerFieldAlgebra {L : Type*} [Ring L] [Algebra K L] :
-    IsScalarTower 𝒪[K] K L :=
+    IsScalarTower (𝓞 K) K L :=
   inferInstanceAs (IsScalarTower (integralClosure ℤ_[p] K) K L)
 
 instance instIsScalarTowerPadicIntFieldAlgebra {L : Type*} [Ring L] [Algebra K L]
-    [Algebra ℤ_[p] L] [IsScalarTower ℤ_[p] K L] : IsScalarTower ℤ_[p] 𝒪[K] L :=
+    [Algebra ℤ_[p] L] [IsScalarTower ℤ_[p] K L] : IsScalarTower ℤ_[p] (𝓞 K) L :=
   IsScalarTower.of_algebraMap_eq fun x => by
-    haveI : IsScalarTower ℤ_[p] 𝒪[K] K := RingOfIntegers.instIsScalarTowerField (K := K)
-    rw [IsScalarTower.algebraMap_apply 𝒪[K] K L,
-      ← IsScalarTower.algebraMap_apply ℤ_[p] 𝒪[K] K,
+    haveI : IsScalarTower ℤ_[p] (𝓞 K) K := RingOfIntegers.instIsScalarTowerField (K := K)
+    rw [IsScalarTower.algebraMap_apply (𝓞 K) K L,
+      ← IsScalarTower.algebraMap_apply ℤ_[p] (𝓞 K) K,
       IsScalarTower.algebraMap_apply ℤ_[p] K L]
 
-instance instIsTorsionFreeField : Module.IsTorsionFree 𝒪[K] K :=
+instance instIsTorsionFreeField : Module.IsTorsionFree (𝓞 K) K :=
   inferInstanceAs (Module.IsTorsionFree (integralClosure ℤ_[p] K) K)
 
 instance instIsTorsionFreeAlgebra {L : Type*} [Ring L] [Algebra K L]
-    [Module.IsTorsionFree K L] : Module.IsTorsionFree 𝒪[K] L :=
-  Module.IsTorsionFree.trans_faithfulSMul 𝒪[K] K L
+    [Module.IsTorsionFree K L] : Module.IsTorsionFree (𝓞 K) L :=
+  Module.IsTorsionFree.trans_faithfulSMul (𝓞 K) K L
 
 /-- If the spectral norm of `x : K` over `ℚ_[p]` is `≤ 1`, then `x` is integral over `ℤ_[p]`:
 the coefficients of its minimal polynomial have norm `≤ 1`, hence lie in `ℤ_[p]`.
@@ -204,7 +205,7 @@ theorem spectralNorm_inv (x : K) :
 
 /-- `𝒪_K = integralClosure ℤ_[p] K` is the closed unit ball of the spectral norm, hence a
 valuation ring: every `x : K` has `x` or `x⁻¹` of spectral norm `≤ 1`. -/
-instance instValuationRing : ValuationRing (integralClosure ℤ_[p] K) := by
+instance instValuationRing : ValuationRing (𝓞 K) := by
   refine ValuationSubring.instValuationRingSubtypeMem
     (A := ⟨(integralClosure ℤ_[p] K).toSubring, ?_⟩)
   intro x
@@ -214,14 +215,14 @@ instance instValuationRing : ValuationRing (integralClosure ℤ_[p] K) := by
     rw [spectralNorm_inv]
     exact inv_le_one_of_one_le₀ hx
 
-instance isDedekind : IsDedekindDomain (integralClosure ℤ_[p] K) :=
+instance isDedekind : IsDedekindDomain (𝓞 K) :=
     IsIntegralClosure.isDedekindDomain ℤ_[p] ℚ_[p] K (integralClosure ℤ_[p] K)
 
-theorem notField (p : ℕ) [Fact p.Prime] (K : Type*) [Field K] [Algebra ℚ_[p] K] :
-    ¬ IsField (integralClosure ℤ_[p] K) := by
-  have hinj : Function.Injective (algebraMap ℤ_[p] (integralClosure ℤ_[p] K)) := by
+theorem notField :
+    ¬ IsField (𝓞 K) := by
+  have hinj : Function.Injective (algebraMap ℤ_[p] (𝓞 K)) := by
     have hK := algebraMap_padicInt_injective p K
-    rw [IsScalarTower.algebraMap_eq ℤ_[p] (integralClosure ℤ_[p] K) K, RingHom.coe_comp] at hK
+    rw [IsScalarTower.algebraMap_eq ℤ_[p] (𝓞 K) K, RingHom.coe_comp] at hK
     exact hK.of_comp
   intro hF
   exact (IsDiscreteValuationRing.not_isField ℤ_[p])
@@ -230,34 +231,34 @@ theorem notField (p : ℕ) [Fact p.Prime] (K : Type*) [Field K] [Algebra ℚ_[p]
 /-- The ring of integers of a `p`-adic field is a discrete valuation ring: `𝒪_K` is a
 valuation ring , a Dedekind domain and not a field, so the DVR characterization applies. -/
 instance instIsDiscreteValuationRing :
-    IsDiscreteValuationRing 𝒪[K] := by
-  have hD : IsDedekindDomain (integralClosure ℤ_[p] K) := inferInstance
-  exact ((IsDiscreteValuationRing.TFAE (integralClosure ℤ_[p] K) (notField p K)).out 2 0).mp hD
+    IsDiscreteValuationRing (𝓞 K) := by
+  have hD : IsDedekindDomain (𝓞 K) := inferInstance
+  exact ((IsDiscreteValuationRing.TFAE (𝓞 K) (notField K)).out 2 0).mp hD
 
-lemma maximalIdeal_ne_bot : IsLocalRing.maximalIdeal 𝒪[K] ≠ ⊥ :=
-  Ring.ne_bot_of_isMaximal_of_not_isField (IsLocalRing.maximalIdeal.isMaximal _) <| notField p K
+lemma maximalIdeal_ne_bot : IsLocalRing.maximalIdeal (𝓞 K) ≠ ⊥ :=
+  Ring.ne_bot_of_isMaximal_of_not_isField (IsLocalRing.maximalIdeal.isMaximal _) <| notField K
 
 end RingOfIntegers
 
-open RingOfIntegers
+open RingOfIntegers IsNonarchimedeanLocalField ValuativeRel
 
-def heightOneMaximalIdeal : IsDedekindDomain.HeightOneSpectrum 𝒪[K] :=
-  ⟨IsLocalRing.maximalIdeal 𝒪[K], (IsLocalRing.maximalIdeal.isMaximal 𝒪[K]).isPrime,
+def heightOneMaximalIdeal : IsDedekindDomain.HeightOneSpectrum (𝓞 K) :=
+  ⟨IsLocalRing.maximalIdeal (𝓞 K), (IsLocalRing.maximalIdeal.isMaximal (𝓞 K)).isPrime,
     RingOfIntegers.maximalIdeal_ne_bot K⟩
 
 def valuation : Valuation K (WithZero (Multiplicative ℤ)) :=
-  letI : IsFractionRing 𝒪[K] K := RingOfIntegers.instIsFractionRing (K := K)
+  letI : IsFractionRing (𝓞 K) K := RingOfIntegers.instIsFractionRing (K := K)
   IsDedekindDomain.HeightOneSpectrum.valuation K (heightOneMaximalIdeal K)
 
-/-- The adic valuation of `𝒪[K]` (with respect to its unique maximal ideal) is `≤ 1` exactly on
-the ring of integers. Since `𝒪[K]` is a DVR, its only height-one prime is `IsLocalRing.maximalIdeal 𝒪[K]`, so the
+/-- The adic valuation of `𝓞 K` (with respect to its unique maximal ideal) is `≤ 1` exactly on
+the ring of integers. Since `𝓞 K` is a DVR, its only height-one prime is `IsLocalRing.maximalIdeal 𝓞 K`, so the
 "all valuations `≤ 1`" criterion for integrality reduces to this single valuation. -/
 theorem valuation_le_one_iff_isIntegral {x : K} :
     valuation K x ≤ 1 ↔ IsIntegral ℤ_[p] x := by
   constructor
   · intro hle
-    letI : IsFractionRing 𝒪[K] K := RingOfIntegers.instIsFractionRing (K := K)
-    have hall : ∀ v : IsDedekindDomain.HeightOneSpectrum 𝒪[K],
+    letI : IsFractionRing (𝓞 K) K := RingOfIntegers.instIsFractionRing (K := K)
+    have hall : ∀ v : IsDedekindDomain.HeightOneSpectrum (𝓞 K),
         (IsDedekindDomain.HeightOneSpectrum.valuation K v) x ≤ 1 := by
       intro v
       have hv : v = heightOneMaximalIdeal K :=
@@ -269,22 +270,20 @@ theorem valuation_le_one_iff_isIntegral {x : K} :
     have hr2 : IsIntegral ℤ_[p] (r : K) := r.2
     exact hr2
   · intro hint
-    letI : IsFractionRing 𝒪[K] K := RingOfIntegers.instIsFractionRing (K := K)
+    letI : IsFractionRing (𝓞 K) K := RingOfIntegers.instIsFractionRing (K := K)
     exact IsDedekindDomain.HeightOneSpectrum.valuation_le_one (heightOneMaximalIdeal K)
-      (⟨x, hint⟩ : 𝒪[K])
+      (⟨x, hint⟩ : (𝓞 K))
 
 instance : ValuativeRel K := .ofValuation <| valuation K
 
+instance instValuationCompatible: (valuation K).Compatible := by
+  exact Valuation.Compatible.ofValuation (valuation K)
+
 instance : ValuativeRel.IsNontrivial K := by
-  letI : IsFractionRing 𝒪[K] K := RingOfIntegers.instIsFractionRing (K := K)
-  haveI := Valuation.Compatible.ofValuation <| valuation K
+  letI : IsFractionRing (𝓞 K) K := RingOfIntegers.instIsFractionRing (K := K)
   rw [ValuativeRel.isNontrivial_iff_isNontrivial (valuation K)]
   exact IsDedekindDomain.HeightOneSpectrum.instIsNontrivialWithZeroMultiplicativeIntValuation K
     (heightOneMaximalIdeal K)
-
-instance instValuationCompatible: (valuation K).Compatible := by
-  letI : IsFractionRing 𝒪[K] K := RingOfIntegers.instIsFractionRing (K := K)
-  exact Valuation.Compatible.ofValuation (valuation K)
 
 instance : NormedField K := spectralNorm.normedField ℚ_[p] K
 
@@ -299,16 +298,20 @@ theorem Norm.isNonarchimedean : IsNonarchimedean (norm : K → ℝ) := isNonarch
 instance : IsUltrametricDist K :=
   IsUltrametricDist.isUltrametricDist_of_forall_norm_add_le_max_norm <| Norm.isNonarchimedean K
 
+lemma valuation_equiv_valuativeRel_valuation :
+    (valuation K).IsEquiv (ValuativeRel.valuation K) :=
+  (ValuativeRel.isEquiv (valuation K) (ValuativeRel.valuation K))
+
 open scoped NNReal in
 /-- The spectral-norm topology on `K` agrees with the valuative topology of the adic valuation
 `valuation K`: the norm balls `{y | ‖y‖ < ε}` and the valuation balls `{z | v z < γ}` form
 mutually cofinal neighborhood bases of `0`. This holds because the spectral norm and the adic
-valuation of `𝒪[K]` are equivalent valuations (both have `𝒪[K]` as their unit ball). -/
+valuation of `𝓞 K` are equivalent valuations (both have `𝓞 K` as their unit ball). -/
 instance : IsValuativeTopology K := by
-  letI : IsFractionRing 𝒪[K] K := RingOfIntegers.instIsFractionRing (K := K)
+  letI : IsFractionRing (𝓞 K) K := RingOfIntegers.instIsFractionRing (K := K)
   let w : Valuation K ℝ≥0 := NormedField.valuation (K := K)
   have hequiv : w.IsEquiv (ValuativeRel.valuation K) := by
-    refine Valuation.IsEquiv.trans ?_ (ValuativeRel.isEquiv (valuation K) (ValuativeRel.valuation K))
+    refine Valuation.IsEquiv.trans ?_ (valuation_equiv_valuativeRel_valuation K)
     rw [Valuation.isEquiv_iff_val_le_one]
     intro x
     rw [valuation_le_one_iff_isIntegral, ← spectralNorm_le_one_iff_isIntegral,
@@ -345,114 +348,37 @@ instance : IsValuativeTopology K := by
 
 instance : IsNonarchimedeanLocalField K where
 
+def ringEquiv_valuation_integer : 𝓞 K ≃+* 𝒪[K] where
+  toFun x := ⟨x.1, by
+    rw [Valuation.mem_integer_iff, ← (valuation_equiv_valuativeRel_valuation K).le_one_iff_le_one,
+      valuation_le_one_iff_isIntegral]
+    exact x.2⟩
+  invFun x := ⟨x.1, by
+    rw [mem_integralClosure_iff, ← valuation_le_one_iff_isIntegral,
+      (valuation_equiv_valuativeRel_valuation K).le_one_iff_le_one,]
+    exact x.2⟩
+  left_inv _ := by simp
+  right_inv _ := by simp
+  map_mul' _ _:= rfl
+  map_add' _ _:= rfl
+
 open IsNonarchimedeanLocalField
-variable (K : Type*) [Field K] {p : ℕ} [Fact p.Prime] [Algebra ℚ_[p] K] [PadicField K p]
 
-instance instFiniteResidueFieldRingOfIntegers : Finite (IsLocalRing.ResidueField (PadicField.ringOfIntegers K)) := by
-  haveI : Finite (IsLocalRing.ResidueField ℤ_[p]) :=
-    Finite.of_equiv _ (PadicInt.residueField (p := p)).symm.toEquiv
-  exact IsLocalRing.ResidueField.finite_of_finite (R := ℤ_[p]) (S := 𝒪[K]) inferInstance
+namespace RingOfIntegers
 
-lemma isPrecomplete_of_finite_of_adicComplete
-    {R : Type*} [CommRing R] {I : Ideal R}
-    {M : Type*} [AddCommGroup M] [Module R M]
-    [Module.Finite R M] [IsAdicComplete I R] : IsPrecomplete I M := by
-  rw [← AdicCompletion.of_surjective_iff]
-  intro y
-  obtain ⟨z, hz⟩ := AdicCompletion.ofTensorProduct_surjective_of_finite I M y
-  subst hz
-  obtain ⟨m, hm⟩ : ∃ m : M,
-      AdicCompletion.ofTensorProduct I M z = AdicCompletion.of I M m := by
-    refine TensorProduct.induction_on z ?h0 ?htmul ?hadd
-    · exact ⟨0, by simp⟩
-    · intro a m
-      obtain ⟨r, hr⟩ := AdicCompletion.of_surjective I R a
-      refine ⟨r • m, ?_⟩
-      rw [← hr]
-      rw [AdicCompletion.ofTensorProduct_tmul]
-      change (algebraMap R (AdicCompletion I R) r) • (AdicCompletion.of I M m) =
-        (AdicCompletion.of I M) (r • m)
-      exact (AdicCompletion.of I M).map_smul r m
-    · intro z₁ z₂ hz₁ hz₂
-      obtain ⟨m₁, hm₁⟩ := hz₁
-      obtain ⟨m₂, hm₂⟩ := hz₂
-      exact ⟨m₁ + m₂, by simp [hm₁, hm₂]⟩
-  exact ⟨m, hm.symm⟩
-
-lemma isAdicComplete_of_finite_of_adicComplete
-    {R : Type*} [CommRing R] {I : Ideal R}
-    {M : Type*} [AddCommGroup M] [Module R M]
-    [Module.Finite R M] [IsHausdorff I M] [IsAdicComplete I R] : IsAdicComplete I M where
-  toIsHausdorff := inferInstance
-  toIsPrecomplete := isPrecomplete_of_finite_of_adicComplete
-
-lemma isAdicComplete_of_pow
-    {R : Type*} [CommRing R] {M : Type*} [AddCommGroup M] [Module R M]
-    (I : Ideal R) {e : ℕ} (he : e ≠ 0)
-    [IsAdicComplete (I ^ e) M] : IsAdicComplete I M where
-  haus' x hx := by
-    apply IsHausdorff.haus (show IsHausdorff (I ^ e) M from inferInstance) x
-    intro n
-    simpa [pow_mul] using hx (e * n)
-  prec' f hf := by
-    have hg : ∀ {m n : ℕ}, m ≤ n → f (e * m) ≡ f (e * n)
-        [SMOD (I ^ e) ^ m • (⊤ : Submodule R M)] := by
-      intro m n hmn
-      simpa [pow_mul] using hf (Nat.mul_le_mul_left e hmn)
-    obtain ⟨L, hL⟩ :=
-      (IsPrecomplete.prec (show IsPrecomplete (I ^ e) M from inferInstance)
-        (f := fun n => f (e * n))) hg
-    refine ⟨L, fun n => ?_⟩
-    have hnle : n ≤ e * n := Nat.le_mul_of_pos_left n (Nat.pos_of_ne_zero he)
-    exact (hf hnle).trans (SModEq.mono (by
-      rw [← pow_mul]
-      exact Submodule.pow_smul_top_le I M hnle) (hL n))
+instance instFiniteResidueField : Finite (IsLocalRing.ResidueField (𝓞 K)) := by
+  let e := ringEquiv_valuation_integer K |>.symm
+  exact Finite.of_equiv _ (IsLocalRing.ResidueField.mapEquiv e).toEquiv
 
 /-- `𝒪_K` is `𝔪_K`-adically complete : the integral closure of the complete DVR `ℤ_[p]` in a
 finite extension is again complete. -/
-instance instIsAdicComplete :
-    IsAdicComplete (IsLocalRing.maximalIdeal 𝒪[K]) 𝒪[K] := by
-  let S := 𝒪[K]
-  haveI : IsScalarTower ℤ_[p] S K := RingOfIntegers.instIsScalarTowerField (K := K)
-  have hZp : IsAdicComplete (IsLocalRing.maximalIdeal ℤ_[p]) S := by
-    haveI : IsHausdorff (IsLocalRing.maximalIdeal ℤ_[p]) S := inferInstance
-    exact isAdicComplete_of_finite_of_adicComplete
-  have hmap :
-      IsAdicComplete ((IsLocalRing.maximalIdeal ℤ_[p]).map (algebraMap ℤ_[p] S)) S :=
-    (IsAdicComplete.map_algebraMap_iff (I := IsLocalRing.maximalIdeal ℤ_[p]) (M := S)).mpr hZp
-  let J : Ideal S := (IsLocalRing.maximalIdeal ℤ_[p]).map (algebraMap ℤ_[p] S)
-  have hinj : Function.Injective (algebraMap ℤ_[p] S) := by
-    have hK := algebraMap_padicInt_injective p K
-    rw [IsScalarTower.algebraMap_eq ℤ_[p] S K, RingHom.coe_comp] at hK
-    exact hK.of_comp
-  have hmZp_bot : IsLocalRing.maximalIdeal ℤ_[p] ≠ ⊥ := by
-    intro h
-    exact (IsDiscreteValuationRing.not_isField ℤ_[p])
-      ((IsLocalRing.isField_iff_maximalIdeal_eq).2 h)
-  have hJbot : J ≠ ⊥ := by
-    dsimp [J]
-    rw [Ideal.map_eq_bot_iff_of_injective hinj]
-    exact hmZp_bot
-  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible S
-  obtain ⟨e, hJe⟩ :=
-    IsDiscreteValuationRing.ideal_eq_span_pow_irreducible (R := S) hJbot hϖ
-  have hJm : J = IsLocalRing.maximalIdeal S ^ e := by
-    rw [hJe, hϖ.maximalIdeal_eq, Ideal.span_singleton_pow]
-  have halgint : (algebraMap ℤ_[p] S).IsIntegral := by
-    exact Algebra.IsIntegral.isIntegral (R := ℤ_[p]) (A := S)
-  have hJtop_ne : J ≠ ⊤ := by
-    dsimp [J]
-    rw [Ideal.map_eq_top_iff (algebraMap ℤ_[p] S) hinj halgint]
-    exact (IsLocalRing.maximalIdeal.isMaximal ℤ_[p]).ne_top
-  have he : e ≠ 0 := by
-    intro he0
-    apply hJtop_ne
-    simp [hJm, he0]
-  haveI : IsAdicComplete (IsLocalRing.maximalIdeal S ^ e) S := by
-    rwa [← hJm]
-  exact isAdicComplete_of_pow (M := S) (IsLocalRing.maximalIdeal S) he
+instance instIsAdicComplete : IsAdicComplete (IsLocalRing.maximalIdeal (𝓞 K)) (𝓞 K) := by
+  let e := ringEquiv_valuation_integer K |>.symm
+  rw [show IsLocalRing.maximalIdeal _ = Ideal.map e 𝓂[K] by simp,
+    IsAdicComplete.congr_ringEquiv _ (ringEquiv_valuation_integer K).symm]
+  infer_instance
 
-instance : IsNonarchimedeanLocalField K := inferInstance
+end RingOfIntegers
 namespace Extension
 
 variable (L : Type*) [Field L] [Algebra ℚ_[p] L] [PadicField L p]
@@ -467,7 +393,7 @@ instance instIsScalarTowerPadicInt : IsScalarTower ℤ_[p] K L :=
 
 /-- The inclusion `𝒪_K → 𝒪_L` of rings of integers induced by `K → L`: an
 element integral over `ℤ_[p]` stays integral after embedding into `L`. -/
-def ringOfIntegersMap : 𝒪[K] →+* 𝒪[L] where
+def ringOfIntegersMap : 𝓞 K →+* 𝓞 L where
   toFun x := ⟨algebraMap K L (x : K), by
     have hx : IsIntegral ℤ_[p] (x : K) := x.2
     have h2 := hx.map (IsScalarTower.toAlgHom ℤ_[p] K L)
@@ -479,19 +405,19 @@ def ringOfIntegersMap : 𝒪[K] →+* 𝒪[L] where
 
 /-- The `ℤ_[p]`-algebra structure on the pair `𝒪_K → 𝒪_L`, used to form the
 relative ramification index. -/
-instance instAlgebraRingOfIntegers : Algebra 𝒪[K] 𝒪[L] :=
+instance instAlgebraRingOfIntegers : Algebra (𝓞 K) (𝓞 L) :=
   (ringOfIntegersMap K L).toAlgebra
 
-instance instIsScalarTowerRingOfIntegersField : IsScalarTower 𝒪[K] 𝒪[L] L :=
+instance instIsScalarTowerRingOfIntegersField : IsScalarTower (𝓞 K) (𝓞 L) L :=
   IsScalarTower.of_algebraMap_eq fun _ => rfl
 
-instance instIsScalarTowerPadicIntRingOfIntegers : IsScalarTower ℤ_[p] 𝒪[K] 𝒪[L] :=
+instance instIsScalarTowerPadicIntRingOfIntegers : IsScalarTower ℤ_[p] (𝓞 K) (𝓞 L) :=
   IsScalarTower.of_algebraMap_eq fun x => by
-    haveI : IsScalarTower ℤ_[p] 𝒪[K] K := RingOfIntegers.instIsScalarTowerField (K := K)
+    haveI : IsScalarTower ℤ_[p] (𝓞 K) K := RingOfIntegers.instIsScalarTowerField (K := K)
     apply RingOfIntegers.ext (K := L)
     change algebraMap ℤ_[p] L x =
-      algebraMap K L (algebraMap 𝒪[K] K (algebraMap ℤ_[p] 𝒪[K] x))
-    rw [← IsScalarTower.algebraMap_apply ℤ_[p] 𝒪[K] K,
+      algebraMap K L (algebraMap (𝓞 K) K (algebraMap ℤ_[p] (𝓞 K) x))
+    rw [← IsScalarTower.algebraMap_apply ℤ_[p] (𝓞 K) K,
       IsScalarTower.algebraMap_apply ℤ_[p] K L]
 
 end Extension
