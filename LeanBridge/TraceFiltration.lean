@@ -11,7 +11,7 @@ residue-field trace. The key general lemma is additivity of the trace along an
 
 open LinearMap Submodule Module
 
-namespace DedekindTame
+namespace TraceFiltration
 
 variable {k M : Type*} [Field k] [AddCommGroup M] [Module k M] [FiniteDimensional k M]
 
@@ -33,14 +33,12 @@ theorem trace_eq_restrict_add_mapQ (f : Module.End k M) {p : Submodule k M}
   conv_lhs => rw [hfcomp]
   rw [map_add]
   congr 1
-  · -- p-block: `tr (f ∘ ι_p ∘ Pp) = tr (f|_p)`
-    rw [← LinearMap.comp_assoc, LinearMap.trace_comp_comm']
+  · rw [← LinearMap.comp_assoc, LinearMap.trace_comp_comm']
     congr 1
     ext x
     simp only [LinearMap.comp_apply, Submodule.subtype_apply, LinearMap.coe_restrict_apply,
       hPpdef, Submodule.projectionOnto_apply_of_mem_left hq (hp _ x.2)]
-  · -- q-block: `tr (f ∘ ι_q ∘ Pq) = tr (f on M ⧸ p)` via `q ≃ M ⧸ p`
-    rw [← LinearMap.comp_assoc, LinearMap.trace_comp_comm',
+  · rw [← LinearMap.comp_assoc, LinearMap.trace_comp_comm',
       ← LinearMap.trace_conj' (p.mapQ p f hp) (p.quotientEquivOfIsCompl q hq)]
     congr 1
 
@@ -222,7 +220,6 @@ theorem algebra_trace_quot_pow_eq_nsmul (x : S) (hP0 : P ≠ ⊥) :
   haveI : Module.Finite R (S ⧸ P ^ e) := instFin_aux.1
   haveI : FiniteDimensional (R ⧸ p) (S ⧸ P ^ e) := instFin_aux.2
   rw [← trace_mulPow_zero_eq_nsmul x hP0]
-  -- identify `mulPow x 0` on `P^0/P^e = ⊤` with `mulLeft (mk x)` on `S/P^e`.
   set N := Ideal.map (Ideal.Quotient.mk (P ^ e)) (P ^ 0) with hN
   have hNtop : N = ⊤ := by rw [hN, pow_zero, Ideal.one_eq_top, Ideal.map_top]
   have hsurj : Function.Surjective ⇑(N.subtype) := by
@@ -267,4 +264,4 @@ theorem intTrace_residue_scaling
 
 end CoreTrace
 
-end DedekindTame
+end TraceFiltration

@@ -47,7 +47,7 @@ We use the integral polynomial `X² + X + 1 ∈ ℤ_2[X]`. Its reduction mod `2`
 no root in `𝔽_2`, hence is irreducible.  The integral root gives an element of
 the residue field of `𝒪_L` whose minimal polynomial has degree `2`; therefore
 `f ≥ 2`.  Since `[L : ℚ_2] = 2`, the identity `e * f = [L : K]` forces `e = 1`. -/
-section UnramifiedConcrete
+section UnramifiedExtension
 
 def zeta3PolyZ : Polynomial ℤ_[2] := X ^ 2 + C 1 * X + C 1
 
@@ -205,7 +205,7 @@ theorem Q2zeta3_inertiaDeg : inertiaDeg ℚ_[2] Q2zeta3 = 2 := by
 theorem Q2zeta3_discriminantExponent : discriminantExponent ℚ_[2] Q2zeta3 = 0 :=
   (discExponent_eq_zero_iff_unramified ℚ_[2] Q2zeta3).mpr Q2zeta3_isUnramified
 
-end UnramifiedConcrete
+end UnramifiedExtension
 
 /-! ## Case 2 — Eisenstein extensions `ℚ_p[X]/(Xᵉ − p)`  (`f = 1`, `d = e − 1`)
 
@@ -215,7 +215,7 @@ integers, satisfies `θᵉ = p`, and lies in the maximal ideal.  This gives
 `𝔪_K 𝒪_L ≤ 𝔪_L^e`, hence `e ≤ e(L/K)`; together with `[L : K] = e` and
 `e(L/K) * f(L/K) = [L : K]`, the extension is totally ramified.  When `p ∤ e`,
 the tame discriminant formula from `PadicInv` gives `d = e - 1`. -/
-section Eisenstein
+section TotallyRamifiedExtension
 
 variable {p : ℕ} [Fact p.Prime] (e : ℕ) [NeZero e]
 
@@ -462,7 +462,7 @@ theorem Qpe_discriminantExponent (hpe : ¬ (p ∣ e)) :
   rw [discExponent_tame ℚ_[p] (Qpe (p := p) e) (Qpe_isTamelyRamified (p := p) e hpe),
       Qpe_inertiaDeg (p := p) e, one_mul, Qpe_ramificationIdx (p := p) e]
 
-end Eisenstein
+end TotallyRamifiedExtension
 
 /-! ## Case 3 — wild quadratic `ℚ_2(√2) = ℚ_2[X]/(X² − 2)`
 
@@ -471,7 +471,7 @@ This is the specialization of Case 2 to `p = e = 2`.  The extension has
 `δ = 3` identifies the integral root `θ` as a uniformizer, proves the extension
 of rings of integers is monogenic, computes the different as
 `(f'(θ)) = (2θ) = (θ³)`, and then reads off the multiplicity. -/
-section WildQ2
+section WildlyRamifiedExtension
 
 /-- `X² − 2 ∈ ℚ_2[X]`. -/
 abbrev sqrtTwoPoly : Polynomial ℚ_[2] := X ^ 2 - C (2 : ℚ_[2])
@@ -803,7 +803,7 @@ theorem Q2sqrt2_wild_strict :
   rw [Q2sqrt2_ramificationIdx, Q2sqrt2_differentExponent]
   omega
 
-end WildQ2
+end WildlyRamifiedExtension
 
 end PadicFieldTests
 

@@ -2,7 +2,7 @@ import Mathlib
 import LeanBridge.Monogenicity
 import LeanBridge.DiscrAssoc
 import LeanBridge.DiscrNormPB
-import LeanBridge.DedekindTame
+import LeanBridge.TraceFiltration
 
 /-!
 # Invariants of `p`-adic fields: the field and its ring of integers
@@ -748,7 +748,7 @@ lemma intTrace_mem_maximalIdeal_of_dvd_ramificationIdx
     have hmem : (p : ℤ_[p]) ∈ IsLocalRing.maximalIdeal ℤ_[p] := by
       rw [PadicInt.maximalIdeal_eq_span_p]; exact Ideal.mem_span_singleton_self _
     exact ((IsLocalRing.mem_maximalIdeal _).mp hmem) hunit
-  have hcore := fun x => DedekindTame.intTrace_residue_scaling
+  have hcore := fun x => TraceFiltration.intTrace_residue_scaling
     (p := maximalIdeal (𝒪 K)) (P := maximalIdeal (𝒪 L)) x hP0 hPe
   intro b
   rw [← Ideal.Quotient.eq_zero_iff_mem, hcore b, nsmul_eq_mul]
@@ -796,7 +796,7 @@ lemma exists_intTrace_not_mem_maximalIdeal_of_not_dvd
     have hmem : (p : ℤ_[p]) ∈ IsLocalRing.maximalIdeal ℤ_[p] := by
       rw [PadicInt.maximalIdeal_eq_span_p]; exact Ideal.mem_span_singleton_self _
     exact ((IsLocalRing.mem_maximalIdeal _).mp hmem) hunit
-  have hcore := fun x => DedekindTame.intTrace_residue_scaling
+  have hcore := fun x => TraceFiltration.intTrace_residue_scaling
     (p := maximalIdeal (𝒪 K)) (P := maximalIdeal (𝒪 L)) x hP0 hPe
   obtain ⟨y, hy⟩ := Algebra.trace_surjective
     (K := 𝒪 K ⧸ maximalIdeal (𝒪 K)) (L := 𝒪 L ⧸ maximalIdeal (𝒪 L)) 1
