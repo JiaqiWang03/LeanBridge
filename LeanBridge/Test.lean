@@ -1,11 +1,11 @@
 import Mathlib
-import LeanBridge.PadicInv
+import LeanBridge.DiffExp
 
 /-!
 # Concrete test cases for `p`-adic field invariants (issue #63)
 
 This file contains compiled examples for the invariants defined in
-`LeanBridge.PadicInv`.  Each extension is presented explicitly as an
+`LeanBridge.DiffExp`.  Each extension is presented explicitly as an
 `AdjoinRoot f`, so the field is literally `ℚ_p[X]/(f)`.
 
 The three examples are:
@@ -214,7 +214,7 @@ criterion over `ℤ_p` and then Gauss's lemma.  The root is lifted to the ring o
 integers, satisfies `θᵉ = p`, and lies in the maximal ideal.  This gives
 `𝔪_K 𝒪_L ≤ 𝔪_L^e`, hence `e ≤ e(L/K)`; together with `[L : K] = e` and
 `e(L/K) * f(L/K) = [L : K]`, the extension is totally ramified.  When `p ∤ e`,
-the tame discriminant formula from `PadicInv` gives `d = e - 1`. -/
+the tame discriminant formula from `DiffExp` gives `d = e - 1`. -/
 section TotallyRamifiedExtension
 
 variable {p : ℕ} [Fact p.Prime] (e : ℕ) [NeZero e]
