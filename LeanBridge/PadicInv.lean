@@ -11,17 +11,10 @@ This file begins the formalization of the blueprint
 `numina/blueprints/padicinv/padicinv.tex` (Invariants of a finite extension of
 `p`-adic fields):
 
-* `PadicField` (blueprint `def:padic-field`): a `p`-adic field is a finite
-  extension `K / ℚ_[p]`.
+* `PadicField` : a `p`-adic field is a finite extension `K / ℚ_[p]`.
 * `PadicField.ringOfIntegers` (`𝒪_K`): the integral closure of `ℤ_[p]` in `K`,
   together with `IsFractionRing 𝒪_K K`.
-* `PadicField.instIsDiscreteValuationRing` (blueprint `prop:padic-is-dvf`):
-  `𝒪_K` is a discrete valuation ring. This is the only fact left as `sorry`.
-
-Once `𝒪_K` is a DVR it is in particular a local Dedekind domain with fraction
-field `K`, so the normalized valuation `v_K : K → ℤᵐ⁰` of `def:padic-field` is
-just Mathlib's `IsDedekindDomain.HeightOneSpectrum.valuation` for the maximal
-ideal of `𝒪_K`; no dedicated wrapper is introduced here.
+* `PadicField.instIsDiscreteValuationRing` : `𝒪_K` is a discrete valuation ring.
 -/
 
 noncomputable section
@@ -596,11 +589,7 @@ theorem relNorm_differentIdeal_eq_span_discr :
   exact Ideal.span_singleton_eq_span_singleton.mpr (hG2.trans hG1)
 
 open IsLocalRing in
-/-- `𝔪_L` is unramified over `𝒪_K` iff `e(L/K) = 1`. The forward direction is
-`Ideal.ramificationIdx_eq_one_of_isUnramifiedAt`; the converse uses separability of the
-residue-field extension `k_L / k_K`, which holds because the residue fields are finite
-(so perfect): `k_K` is finite as `𝒪_K` is module-finite over `ℤ_[p]` whose residue field
-is `ZMod p`. -/
+/-- `𝔪_L` is unramified over `𝒪_K` iff `e(L/K) = 1`. -/
 theorem isUnramifiedAt_maximalIdeal_iff :
     Algebra.IsUnramifiedAt (𝒪 K) (IsLocalRing.maximalIdeal (𝒪 L)) ↔ IsUnramified K L := by
   have hp : maximalIdeal (𝒪 L) ≠ ⊥ := IsDiscreteValuationRing.not_a_field (𝒪 L)
@@ -629,9 +618,8 @@ theorem isUnramifiedAt_maximalIdeal_iff :
   rw [hover]
   exact Iff.rfl
 
-/-- The discriminant exponent equals the residue degree times the different exponent
-(blueprint `prop:disc-eq-f-delta`): `d = f · δ`, since `N_{L/K}(𝔪_L) = 𝔪_K ^ f` and
-the discriminant is the norm of the different (`relNorm_differentIdeal_eq_span_discr`). -/
+/-- The discriminant exponent equals the residue degree times the different exponent:
+`d = f · δ`, since `N_{L/K}(𝔪_L) = 𝔪_K ^ f` and the discriminant is the norm of the different. -/
 theorem discExponent_eq_inertiaDeg_mul_differentExponent :
     discriminantExponent K L = inertiaDeg K L * differentExponent K L := by
   have hd : differentIdeal (𝒪 K) (𝒪 L) ≠ ⊥ := differentIdeal_ne_bot
@@ -688,8 +676,7 @@ lemma ramificationIdx_ne_zero : NeZero (ramificationIdx K L) := by
   exact (IsLocalRing.maximalIdeal.isMaximal (𝒪 L)).ne_top (top_le_iff.mp hle)
 
 open IsLocalRing in
-/-- Lower bound of Dedekind's different theorem: `e - 1 ≤ δ`. Uses `𝔪_L ^ e ∣ 𝔪_K 𝒪_L`
-and `Ideal.pow_sub_one_dvd_differentIdeal`. -/
+/-- Lower bound of Dedekind's different theorem: `e - 1 ≤ δ`. -/
 lemma ramificationIdx_sub_one_le_differentExponent :
     ramificationIdx K L - 1 ≤ differentExponent K L := by
   have hmK : maximalIdeal (𝒪 K) ≠ ⊥ := IsDiscreteValuationRing.not_a_field (𝒪 K)
@@ -810,10 +797,7 @@ lemma exists_intTrace_not_mem_maximalIdeal_of_not_dvd
 
 open scoped nonZeroDivisors in
 open IsLocalRing in
-/-- Wild case of Dedekind's different theorem: when `p ∣ e`, `e ≤ δ` (so the lower
-bound `e - 1 ≤ δ` is not sharp). Proved via `𝔡 ≤ 𝔪_L ^ e`, obtained from
-`differentialIdeal_le_fractionalIdeal_iff` and a uniformizer decomposition of
-`(𝔪_L ^ e)⁻¹`, using that all integral traces land in `𝔪_K`. -/
+/-- Wild case of Dedekind's different theorem: when `p ∣ e`, `e ≤ δ`. -/
 lemma ramificationIdx_le_differentExponent_of_dvd
     (hdvd : (p : ℕ) ∣ ramificationIdx K L) :
     ramificationIdx K L ≤ differentExponent K L := by
@@ -870,8 +854,7 @@ lemma ramificationIdx_le_differentExponent_of_dvd
 
 open IsLocalRing in
 /-- Tame case of Dedekind's different theorem: when `p ∤ e`, `δ < e`, hence the lower
-bound `e - 1 ≤ δ` is an equality. Proved via `𝔪_L ^ e ∤ 𝔡`, from
-`not_dvd_differentIdeal_of_intTrace_not_mem` applied to an integral trace avoiding `𝔪_K`. -/
+bound `e - 1 ≤ δ` is an equality. -/
 lemma differentExponent_lt_ramificationIdx_of_not_dvd
     (htame : IsTamelyRamified K L) :
     differentExponent K L < ramificationIdx K L := by
@@ -895,9 +878,8 @@ lemma differentExponent_lt_ramificationIdx_of_not_dvd
   exact hndvd (hfin.pow_dvd_iff_le_multiplicity.mpr hle2)
 
 open IsLocalRing in
-/-- Dedekind's different theorem (blueprint `thm:dedekind-different`): the different
-exponent satisfies `δ ≥ e - 1`, with equality exactly when `L / K` is tamely
-ramified (`p ∤ e`). -/
+/-- Dedekind's different theorem: the different exponent
+satisfies `δ ≥ e - 1`, with equality exactly when `L / K` is tamely ramified (`p ∤ e`). -/
 theorem differentExponent_tame :
     ramificationIdx K L - 1 ≤ differentExponent K L ∧
       (differentExponent K L = ramificationIdx K L - 1 ↔ IsTamelyRamified K L) := by
