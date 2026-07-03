@@ -17,7 +17,7 @@ noncomputable section
 
 /-- A *`p`-adic field* is a finite extension `K / ℚ_[p]`. The prime `p` is an
 `outParam`: it is recovered from the field `K` (via its `ℚ_[p]`-algebra
-structure), so downstream definitions such as `𝒪 K` need not carry `p`. -/
+structure), so downstream definitions such as `𝒪[K]` need not carry `p`. -/
 class PadicField (K : Type*) [Field K] (p : outParam ℕ) [Fact p.Prime] [Algebra ℚ_[p] K] : Prop
     extends Module.Finite ℚ_[p] K
 
@@ -27,10 +27,10 @@ variable (K : Type*) [Field K] {p : ℕ} [Fact p.Prime] [Algebra ℚ_[p] K] [Pad
 
 /-- The canonical `ℤ_[p]`-algebra structure on a `p`-adic field, obtained by
 restricting scalars along `ℤ_[p] → ℚ_[p]`. -/
-instance instAlgebraPadicInt : Algebra ℤ_[p] K :=
+instance : Algebra ℤ_[p] K :=
   ((algebraMap ℚ_[p] K).comp (algebraMap ℤ_[p] ℚ_[p])).toAlgebra
 
-instance instIsScalarTower : IsScalarTower ℤ_[p] ℚ_[p] K :=
+instance : IsScalarTower ℤ_[p] ℚ_[p] K :=
   IsScalarTower.of_algebraMap_eq fun _ => rfl
 
 theorem algebraMap_padicInt_injective (p : ℕ) [Fact p.Prime] (K : Type*) [Field K]
@@ -42,50 +42,50 @@ theorem charZero_of_padicAlgebra (p : ℕ) [Fact p.Prime] (K : Type*) [Field K]
     [Algebra ℚ_[p] K] : CharZero K :=
   charZero_of_injective_algebraMap (algebraMap ℚ_[p] K).injective
 
-instance instNeZeroPrime : NeZero p :=
-  ⟨(Fact.out (p := p.Prime)).ne_zero⟩
+-- instance instIsAlgebraic : Algebra.IsAlgebraic ℚ_[p] K :=
+--   Algebra.IsAlgebraic.of_finite ℚ_[p] K
 
-instance instIsAlgebraic : Algebra.IsAlgebraic ℚ_[p] K :=
-  Algebra.IsAlgebraic.of_finite ℚ_[p] K
-
-instance instIsSeparable : Algebra.IsSeparable ℚ_[p] K := by
+instance : Algebra.IsSeparable ℚ_[p] K := by
   haveI : CharZero K := charZero_of_padicAlgebra p K
   exact Algebra.IsSeparable.of_integral ℚ_[p] K
 
-instance instIsTorsionFreePadicInt : Module.IsTorsionFree ℤ_[p] K :=
+instance : Module.IsTorsionFree ℤ_[p] K :=
   Module.isTorsionFree_iff_algebraMap_injective.mpr (algebraMap_padicInt_injective p K)
 
-/-- The ring of integers `𝒪 K` of a `p`-adic field `K`: the integral closure of
+/-- The ring of integers `𝒪[K]` of a `p`-adic field `K`: the integral closure of
 `ℤ_[p]` (the integers of `ℚ_[p]`) in `K`. The prime `p` is recovered from the
 `PadicField` instance, so it is not an explicit argument. -/
 def ringOfIntegers (K : Type*) [Field K] {p : ℕ} [Fact p.Prime] [Algebra ℚ_[p] K]
     [PadicField K p] : Subalgebra ℤ_[p] K := integralClosure ℤ_[p] K
 
-@[inherit_doc] scoped notation "𝒪" => PadicField.ringOfIntegers
+namespace RingOfIntegers
 
-instance instIsIntegralClosure : IsIntegralClosure (𝒪 K) ℤ_[p] K :=
+@[inherit_doc] scoped notation "𝒪[" K "]" => PadicField.ringOfIntegers K
+
+instance instIsIntegralClosure : IsIntegralClosure 𝒪[K] ℤ_[p] K :=
   integralClosure.isIntegralClosure ℤ_[p] K
 
-instance : IsFractionRing (𝒪 K) K :=
+instance instIsFractionRing : IsFractionRing 𝒪[K] K :=
   integralClosure.isFractionRing_of_finite_extension ℚ_[p] K
 
-instance instAlgebraIsIntegralRingOfIntegers : Algebra.IsIntegral ℤ_[p] (𝒪 K) :=
+instance instIsIntegralPadicInt: Algebra.IsIntegral ℤ_[p] 𝒪[K] :=
   inferInstanceAs (Algebra.IsIntegral ℤ_[p] (integralClosure ℤ_[p] K))
 
-instance instCharZeroRingOfIntegers : CharZero (𝒪 K) :=
-  charZero_of_injective_algebraMap (FaithfulSMul.algebraMap_injective ℤ_[p] (𝒪 K))
+instance instCharZero: CharZero 𝒪[K] :=
+  charZero_of_injective_algebraMap (FaithfulSMul.algebraMap_injective ℤ_[p] 𝒪[K])
 
-instance instPerfectFieldFractionRingRingOfIntegers : PerfectField (FractionRing (𝒪 K)) :=
+instance instPerfectFieldFractionRing: PerfectField (FractionRing 𝒪[K]) :=
   inferInstance
 
-instance instFiniteRingOfIntegers : Module.Finite ℤ_[p] (𝒪 K) :=
-  IsIntegralClosure.finite ℤ_[p] ℚ_[p] K (𝒪 K)
+instance instFiniteRingOfIntegers : Module.Finite ℤ_[p] 𝒪[K] :=
+  IsIntegralClosure.finite ℤ_[p] ℚ_[p] K 𝒪[K]
 
-instance instFreeRingOfIntegers : Module.Free ℤ_[p] (𝒪 K) :=
-  IsIntegralClosure.module_free ℤ_[p] ℚ_[p] K (𝒪 K)
+instance instFreeRingOfIntegers : Module.Free ℤ_[p] 𝒪[K] :=
+  IsIntegralClosure.module_free ℤ_[p] ℚ_[p] K 𝒪[K]
 
 /-- If the spectral norm of `x : K` over `ℚ_[p]` is `≤ 1`, then `x` is integral over `ℤ_[p]`:
-the coefficients of its minimal polynomial have norm `≤ 1`, hence lie in `ℤ_[p]`. -/
+the coefficients of its minimal polynomial have norm `≤ 1`, hence lie in `ℤ_[p]`.
+  A general version is exactly in FLT. -/
 theorem isIntegral_of_spectralNorm_le_one {x : K} (hx : spectralNorm ℚ_[p] K x ≤ 1) :
     IsIntegral ℤ_[p] x := by
   have hlift : minpoly ℚ_[p] x ∈ Polynomial.lifts (algebraMap ℤ_[p] ℚ_[p]) := by
@@ -106,6 +106,22 @@ theorem isIntegral_of_spectralNorm_le_one {x : K} (hx : spectralNorm ℚ_[p] K x
     (minpoly.monic (Algebra.IsAlgebraic.isAlgebraic x).isIntegral)
   refine ⟨P, hP', ?_⟩
   rw [← Polynomial.aeval_def, ← Polynomial.aeval_map_algebraMap ℚ_[p], hP, minpoly.aeval]
+
+/-- Reverse of `isIntegral_of_spectralNorm_le_one`: an element integral over `ℤ_[p]` has
+spectral norm `≤ 1`. Over the integrally closed `ℤ_[p]` the minimal polynomial of `x` over
+`ℚ_[p]` has coefficients in `ℤ_[p]`, all of norm `≤ 1`, so the spectral value is `≤ 1`. -/
+theorem spectralNorm_le_one_of_isIntegral {x : K} (hx : IsIntegral ℤ_[p] x) :
+    spectralNorm ℚ_[p] K x ≤ 1 := by
+  have hxalg : IsIntegral ℚ_[p] x := (Algebra.IsAlgebraic.isAlgebraic x).isIntegral
+  show spectralValue (minpoly ℚ_[p] x) ≤ 1
+  rw [spectralValue_le_one_iff (minpoly.monic hxalg)]
+  intro n
+  rw [minpoly.isIntegrallyClosed_eq_field_fractions' (K := ℚ_[p]) hx, Polynomial.coeff_map]
+  simpa using PadicInt.norm_le_one ((minpoly ℤ_[p] x).coeff n)
+
+theorem spectralNorm_le_one_iff_isIntegral {x : K} :
+    spectralNorm ℚ_[p] K x ≤ 1 ↔ IsIntegral ℤ_[p] x :=
+  ⟨isIntegral_of_spectralNorm_le_one K, spectralNorm_le_one_of_isIntegral K⟩
 
 /-- The spectral norm over `ℚ_[p]` is multiplicative, hence inverts. -/
 theorem spectralNorm_inv (x : K) :
@@ -145,39 +161,32 @@ theorem notField (p : ℕ) [Fact p.Prime] (K : Type*) [Field K] [Algebra ℚ_[p]
 /-- The ring of integers of a `p`-adic field is a discrete valuation ring: `𝒪_K` is a
 valuation ring , a Dedekind domain and not a field, so the DVR characterization applies. -/
 instance instIsDiscreteValuationRing :
-    IsDiscreteValuationRing (𝒪 K) := by
+    IsDiscreteValuationRing 𝒪[K] := by
   have hD : IsDedekindDomain (integralClosure ℤ_[p] K) := inferInstance
   exact ((IsDiscreteValuationRing.TFAE (integralClosure ℤ_[p] K) (notField p K)).out 2 0).mp hD
 
-/-- Reverse of `isIntegral_of_spectralNorm_le_one`: an element integral over `ℤ_[p]` has
-spectral norm `≤ 1`. Over the integrally closed `ℤ_[p]` the minimal polynomial of `x` over
-`ℚ_[p]` has coefficients in `ℤ_[p]`, all of norm `≤ 1`, so the spectral value is `≤ 1`. -/
-theorem spectralNorm_le_one_of_isIntegral {x : K} (hx : IsIntegral ℤ_[p] x) :
-    spectralNorm ℚ_[p] K x ≤ 1 := by
-  have hxalg : IsIntegral ℚ_[p] x := (Algebra.IsAlgebraic.isAlgebraic x).isIntegral
-  show spectralValue (minpoly ℚ_[p] x) ≤ 1
-  rw [spectralValue_le_one_iff (minpoly.monic hxalg)]
-  intro n
-  rw [minpoly.isIntegrallyClosed_eq_field_fractions' (K := ℚ_[p]) hx, Polynomial.coeff_map]
-  simpa using PadicInt.norm_le_one ((minpoly ℤ_[p] x).coeff n)
-
-lemma maximalIdeal_ne_bot : IsLocalRing.maximalIdeal (𝒪 K) ≠ ⊥ :=
+lemma maximalIdeal_ne_bot : IsLocalRing.maximalIdeal 𝒪[K] ≠ ⊥ :=
   Ring.ne_bot_of_isMaximal_of_not_isField (IsLocalRing.maximalIdeal.isMaximal _) <| notField p K
 
-def valuation := IsDedekindDomain.HeightOneSpectrum.valuation (R := (𝒪 K)) K <|
-  ⟨IsLocalRing.maximalIdeal (𝒪 K), IsLocalRing.maximalIdeal.isMaximal (𝒪 K) |>.isPrime, maximalIdeal_ne_bot K⟩
+end RingOfIntegers
 
-/-- The adic valuation of `(𝒪 K)` (with respect to its unique maximal ideal) is `≤ 1` exactly on
-the ring of integers. Since `(𝒪 K)` is a DVR, its only height-one prime is `IsLocalRing.maximalIdeal (𝒪 K)`, so the
+open RingOfIntegers
+
+def valuation := IsDedekindDomain.HeightOneSpectrum.valuation (R := 𝒪[K]) K <|
+  ⟨IsLocalRing.maximalIdeal 𝒪[K], IsLocalRing.maximalIdeal.isMaximal 𝒪[K] |>.isPrime,
+    maximalIdeal_ne_bot K⟩
+
+/-- The adic valuation of `𝒪[K]` (with respect to its unique maximal ideal) is `≤ 1` exactly on
+the ring of integers. Since `𝒪[K]` is a DVR, its only height-one prime is `IsLocalRing.maximalIdeal 𝒪[K]`, so the
 "all valuations `≤ 1`" criterion for integrality reduces to this single valuation. -/
 theorem valuation_le_one_iff_isIntegral {x : K} :
     valuation K x ≤ 1 ↔ IsIntegral ℤ_[p] x := by
   constructor
   · intro hle
-    have hall : ∀ v : IsDedekindDomain.HeightOneSpectrum (𝒪 K),
+    have hall : ∀ v : IsDedekindDomain.HeightOneSpectrum 𝒪[K],
         (IsDedekindDomain.HeightOneSpectrum.valuation K v) x ≤ 1 := by
       intro v
-      have hv : v = ⟨IsLocalRing.maximalIdeal (𝒪 K), (IsLocalRing.maximalIdeal.isMaximal (𝒪 K)).isPrime,
+      have hv : v = ⟨IsLocalRing.maximalIdeal 𝒪[K], (IsLocalRing.maximalIdeal.isMaximal 𝒪[K]).isPrime,
           maximalIdeal_ne_bot K⟩ :=
         IsDedekindDomain.HeightOneSpectrum.ext (IsLocalRing.eq_maximalIdeal inferInstance)
       rw [hv]; exact hle
@@ -186,7 +195,7 @@ theorem valuation_le_one_iff_isIntegral {x : K} :
     have hr2 : IsIntegral ℤ_[p] (r : K) := r.2
     simpa using hr2
   · intro hint
-    exact IsDedekindDomain.HeightOneSpectrum.valuation_le_one _ (⟨x, hint⟩ : (𝒪 K))
+    exact IsDedekindDomain.HeightOneSpectrum.valuation_le_one _ (⟨x, hint⟩ : 𝒪[K])
 
 instance : ValuativeRel K := .ofValuation <| valuation K
 
@@ -195,7 +204,12 @@ instance : ValuativeRel.IsNontrivial K := by
   rw [ValuativeRel.isNontrivial_iff_isNontrivial (valuation K)]
   exact IsDedekindDomain.HeightOneSpectrum.instIsNontrivialWithZeroMultiplicativeIntValuation _ _
 
+instance instValuationCompatible: (valuation K).Compatible :=
+  Valuation.Compatible.ofValuation (valuation K)
+
 instance : NormedField K := spectralNorm.normedField ℚ_[p] K
+
+instance : NontriviallyNormedField K := spectralNorm.nontriviallyNormedField ℚ_[p] K
 
 instance : NormedAlgebra ℚ_[p] K := spectralNorm.normedAlgebra _ _
 
@@ -210,31 +224,16 @@ open scoped NNReal in
 /-- The spectral-norm topology on `K` agrees with the valuative topology of the adic valuation
 `valuation K`: the norm balls `{y | ‖y‖ < ε}` and the valuation balls `{z | v z < γ}` form
 mutually cofinal neighborhood bases of `0`. This holds because the spectral norm and the adic
-valuation of `(𝒪 K)` are equivalent valuations (both have `(𝒪 K)` as their unit ball). -/
+valuation of `𝒪[K]` are equivalent valuations (both have `𝒪[K]` as their unit ball). -/
 instance : IsValuativeTopology K := by
-  letI : NontriviallyNormedField K := spectralNorm.nontriviallyNormedField ℚ_[p] K
-  let w : Valuation K ℝ≥0 :=
-    { toFun := fun x => ‖x‖₊
-      map_zero' := nnnorm_zero
-      map_one' := nnnorm_one
-      map_mul' := nnnorm_mul
-      map_add_le_max' := IsUltrametricDist.norm_add_le_max }
-  haveI : (valuation K).Compatible := Valuation.Compatible.ofValuation (valuation K)
-  have hwvH : w.IsEquiv (valuation K) := by
+  let w : Valuation K ℝ≥0 := NormedField.valuation (K := K)
+  have hequiv : w.IsEquiv (ValuativeRel.valuation K) := by
+    refine Valuation.IsEquiv.trans ?_ (ValuativeRel.isEquiv (valuation K) (ValuativeRel.valuation K))
     rw [Valuation.isEquiv_iff_val_le_one]
     intro x
-    rw [valuation_le_one_iff_isIntegral]
-    have hwx : ((w x : ℝ≥0) : ℝ) = spectralNorm ℚ_[p] K x := rfl
-    constructor
-    · intro h
-      refine isIntegral_of_spectralNorm_le_one (K := K) ?_
-      rw [← hwx]; exact_mod_cast h
-    · intro h
-      have h1 : spectralNorm ℚ_[p] K x ≤ 1 := spectralNorm_le_one_of_isIntegral (K := K) h
-      rw [← hwx] at h1
-      exact_mod_cast h1
-  have hequiv : w.IsEquiv (ValuativeRel.valuation K) :=
-    hwvH.trans (ValuativeRel.isEquiv (valuation K) (ValuativeRel.valuation K))
+    rw [valuation_le_one_iff_isIntegral, ← spectralNorm_le_one_iff_isIntegral,
+      NormedField.valuation_apply]
+    rfl
   have hlt : ∀ x y : K,
       ‖x‖ < ‖y‖ ↔ ValuativeRel.valuation K x < ValuativeRel.valuation K y := by
     intro x y
@@ -266,10 +265,16 @@ instance : IsValuativeTopology K := by
 
 instance : IsNonarchimedeanLocalField K where
 
-instance instFiniteResidueFieldRingOfIntegers : Finite (IsLocalRing.ResidueField (𝒪 K)) := by
-  haveI : Finite (IsLocalRing.ResidueField ℤ_[p]) :=
-    Finite.of_equiv _ (PadicInt.residueField (p := p)).symm.toEquiv
-  exact IsLocalRing.ResidueField.finite_of_finite (R := ℤ_[p]) (S := 𝒪 K) inferInstance
+end PadicField
+
+open IsNonarchimedeanLocalField
+variable (K : Type*) [Field K] {p : ℕ} [Fact p.Prime] [Algebra ℚ_[p] K] [PadicField K p]
+
+instance instFiniteResidueFieldRingOfIntegers : Finite (IsLocalRing.ResidueField (PadicField.ringOfIntegers K)) := by
+  -- exact IsNonarchimedeanLocalField.instFiniteResidueFieldSubtypeMemSubringIntegerValueGroupWithZeroValuation K
+  -- -- haveI : Finite (IsLocalRing.ResidueField ℤ_[p]) :=
+  --   Finite.of_equiv _ (PadicInt.residueField (p := p)).symm.toEquiv
+  -- exact IsLocalRing.ResidueField.finite_of_finite (R := ℤ_[p]) (S := 𝒪[K]) inferInstance
 
 lemma isPrecomplete_of_finite_of_adicComplete
     {R : Type*} [CommRing R] {I : Ideal R}
@@ -329,8 +334,8 @@ lemma isAdicComplete_of_pow
 /-- `𝒪_K` is `𝔪_K`-adically complete : the integral closure of the complete DVR `ℤ_[p]` in a
 finite extension is again complete. -/
 instance instIsAdicComplete :
-    IsAdicComplete (IsLocalRing.maximalIdeal (𝒪 K)) (𝒪 K) := by
-  let S := 𝒪 K
+    IsAdicComplete (IsLocalRing.maximalIdeal 𝒪[K]) 𝒪[K] := by
+  let S := 𝒪[K]
   have hZp : IsAdicComplete (IsLocalRing.maximalIdeal ℤ_[p]) S := by
     haveI : IsHausdorff (IsLocalRing.maximalIdeal ℤ_[p]) S := inferInstance
     exact isAdicComplete_of_finite_of_adicComplete
@@ -384,7 +389,7 @@ instance instIsScalarTowerPadicInt : IsScalarTower ℤ_[p] K L :=
 
 /-- The inclusion `𝒪_K → 𝒪_L` of rings of integers induced by `K → L`: an
 element integral over `ℤ_[p]` stays integral after embedding into `L`. -/
-def ringOfIntegersMap : 𝒪 K →+* 𝒪 L where
+def ringOfIntegersMap : 𝒪[K] →+* 𝒪 L where
   toFun x := ⟨algebraMap K L (x : K), by
     have hx : IsIntegral ℤ_[p] (x : K) := x.2
     have h2 := hx.map (IsScalarTower.toAlgHom ℤ_[p] K L)
@@ -396,7 +401,7 @@ def ringOfIntegersMap : 𝒪 K →+* 𝒪 L where
 
 /-- The `ℤ_[p]`-algebra structure on the pair `𝒪_K → 𝒪_L`, used to form the
 relative ramification index. -/
-instance instAlgebraRingOfIntegers : Algebra (𝒪 K) (𝒪 L) :=
+instance instAlgebraRingOfIntegers : Algebra 𝒪[K] (𝒪 L) :=
   (ringOfIntegersMap K L).toAlgebra
 
 end Extension
