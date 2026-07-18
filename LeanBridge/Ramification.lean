@@ -10,23 +10,14 @@ open scoped PadicField
 
 namespace PadicField
 
-open RingOfIntegers
-
-variable (K : Type*) [Field K] {p : ℕ} [Fact p.Prime] [Algebra ℚ_[p] K] [PadicField K p]
-
-/-- The *base ramification index* `e₀ = e(K / ℚ_p)`: the
-ramification index of the maximal ideal `(p) = 𝔪_{ℤ_[p]}` in `𝒪_K`. -/
-def baseRamificationIndex : ℕ :=
-  Ideal.ramificationIdx (R := ℤ_[p]) (S := 𝓞 K)
-    (IsLocalRing.maximalIdeal ℤ_[p]) (IsLocalRing.maximalIdeal (𝓞 K))
-
 /-!
 ## Invariants of an extension `L / K`
 -/
 
 namespace Extension
 
-variable (L : Type*) [Field L] [Algebra ℚ_[p] L] [PadicField L p]
+variable (K : Type*) [Field K] {p : ℕ} [Fact p.Prime] [Algebra ℚ_[p] K] [PadicField K p]
+  (L : Type*) [Field L] [Algebra ℚ_[p] L] [PadicField L p]
   [Algebra K L] [Module.Finite K L] [IsScalarTower ℚ_[p] K L]
 
 /-- The *ramification index* `e(L / K)` of an extension of `p`-adic fields:
@@ -140,7 +131,7 @@ instance instIsSeparableResidueFieldRingOfIntegersExtension :
 /-- Transitivity of ramification: the absolute
 ramification index is the product of the relative and base ones, `e_abs = e · e₀`. -/
 theorem absoluteRamificationIndex_eq :
-    absoluteRamificationIndex L = ramificationIdx K L * baseRamificationIndex K := by
+    absoluteRamificationIndex L = ramificationIdx K L * absoluteRamificationIndex K := by
   have hinjKL : Function.Injective (algebraMap (𝓞 K) (𝓞 L)) :=
     FaithfulSMul.algebraMap_injective (𝓞 K) (𝓞 L)
   have hinjZL : Function.Injective (algebraMap ℤ_[p] (𝓞 L)) := by
@@ -155,7 +146,7 @@ theorem absoluteRamificationIndex_eq :
   have hg : Ideal.map (algebraMap (𝓞 K) (𝓞 L)) (IsLocalRing.maximalIdeal (𝓞 K)) ≤
       IsLocalRing.maximalIdeal (𝓞 L) :=
     Ideal.map_le_iff_le_comap.mpr (le_of_eq Ideal.LiesOver.over)
-  rw [absoluteRamificationIndex, baseRamificationIndex, ramificationIdx,
+  rw [absoluteRamificationIndex, absoluteRamificationIndex, ramificationIdx,
     Ideal.ramificationIdx_algebra_tower hg0 hfg hg, mul_comm]
 
 /-- `𝓞 L` is a finite free `𝓞 K`-module of rank `[L : K]`. -/
@@ -189,8 +180,6 @@ theorem ramificationIdx_mul_inertiaDeg :
 /-- `𝒪_L` is a free `𝒪_K`-module, so it carries a chosen
 basis used to define the discriminant. -/
 instance instModuleFree : Module.Free (𝓞 K) (𝓞 L) := (free_finrank K L).1
-
-
 
 /-- In a discrete valuation ring, `multiplicity 𝔪 (𝔪 ^ n) = n`. -/
 lemma multiplicity_maximalIdeal_pow {R : Type*} [CommRing R] [IsDomain R]
