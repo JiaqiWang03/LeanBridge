@@ -1,7 +1,7 @@
-import LeanBridge.Basic
-import LeanBridge.DiffExp
 import LeanBridge.Example
-import LeanBridge.Monogenicity
-import LeanBridge.Ramification
-import LeanBridge.Test
-import LeanBridge.TraceFiltration
+import LeanBridge.PadicField.Basic
+import LeanBridge.PadicField.DiffExp
+import LeanBridge.PadicField.Monogenicity
+import LeanBridge.PadicField.Ramification
+import LeanBridge.PadicField.Test
+import LeanBridge.PadicField.TraceFiltration

@@ -1,6 +1,6 @@
-import LeanBridge.Ramification
-import LeanBridge.Monogenicity
-import LeanBridge.TraceFiltration
+import LeanBridge.PadicField.Ramification
+import LeanBridge.PadicField.Monogenicity
+import LeanBridge.PadicField.TraceFiltration
 
 /-!
 # Different and discriminant exponents of extensions of `p`-adic fields

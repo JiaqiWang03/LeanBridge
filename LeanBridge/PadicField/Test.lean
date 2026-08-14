@@ -1,11 +1,11 @@
 import Mathlib
-import LeanBridge.DiffExp
+import LeanBridge.PadicField.DiffExp
 
 /-!
 # Concrete test cases for `p`-adic field invariants (issue #63)
 
 This file contains compiled examples for the invariants defined in
-`LeanBridge.DiffExp`.  Each extension is presented explicitly as an
+`LeanBridge.PadicField.DiffExp`.  Each extension is presented explicitly as an
 `AdjoinRoot f`, so the field is literally `ℚ_p[X]/(f)`.
 
 The three examples are:
