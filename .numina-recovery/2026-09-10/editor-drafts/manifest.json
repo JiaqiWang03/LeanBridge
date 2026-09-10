@@ -1,0 +1,16 @@
+{
+  "note": "Preserved Fuse editor snapshots. Some are older than the current branch; compare before restoring. Original branch contents were not overwritten.",
+  "drafts": [
+    {
+      "workspace_id": "55da465e-26eb-45a1-83a4-fd1f5373daad",
+      "original_branch": "refs/heads/numina/test",
+      "original_blueprint_file": null,
+      "blueprint_name": "test",
+      "project_subdir": "",
+      "saved_at": "2026-07-02 15:30:27.672438+00:00",
+      "revision": 1,
+      "audit_status": "differs_remote",
+      "recovery_file": ".numina-recovery/2026-09-10/editor-drafts/55da465e-26eb-45a1-83a4-fd1f5373daad.tex"
+    }
+  ]
+}
